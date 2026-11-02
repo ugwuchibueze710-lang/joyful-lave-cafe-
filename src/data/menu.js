@@ -48,7 +48,7 @@ export const categories = [
     short: 'Acai',
     blurb: 'Blended to order and loaded with fresh fruit and gluten-free granola.',
     items: [
-      { name: 'Happy Acai Bowl', popular: true, photo: '/photos/menu-happy-acai.webp', desc: 'Pineapple, apple & acai. Topped with gluten-free granola, coconut, cacao nibs, strawberry, blueberry, banana, chia seeds & almond butter.', sizes: [['Regular', 11.5]] },
+      { name: 'Happy Acai Bowl', popular: true, desc: 'Pineapple, apple & acai. Topped with gluten-free granola, coconut, cacao nibs, strawberry, blueberry, banana, chia seeds & almond butter.', sizes: [['Regular', 11.5]] },
       { name: 'Peanut Butter Passion Acai Bowl', desc: 'Peanut butter, strawberry, mango & acai. Topped with gluten-free granola, coconut, cacao nibs, strawberry, blueberry, banana, chia seeds & almond butter.', sizes: [['Regular', 11.5]] },
       { name: 'Tropical Colada Blue Spirulina Bowl', desc: 'A Coconut and Pineapple Blue Spirulina Sorbet flavored with pineapple and coconut, topped with gluten-free granola, shredded coconut, mango, strawberry, banana, chia seeds, and agave syrup.', sizes: [['Regular', 11.5]] },
     ],
@@ -88,7 +88,7 @@ export const categories = [
     blurb: 'Served from opening. Customizations welcome.',
     items: [
       { name: 'The Ultimate', desc: 'Enjoy an over-the-top indulgent treat that will kick-start your day! A buttery croissant is stacked high with eggs, crispy bacon, sausage, avocado, house-made garlic tomato jam, & Pepper Jack cheese.', sizes: [['Regular', 8]] },
-      { name: 'Avocado Toast', popular: true, photo: '/photos/menu-avocado-toast.webp', desc: 'Toasted flatbread or whole wheat smothered with roasted red pepper hummus, fresh avocado, tomato, olive oil, red pepper flakes & topped off with seasoning. Upgrade to a Flatbread for additional $2.00', sizes: [['Regular', 5]] },
+      { name: 'Avocado Toast', popular: true, desc: 'Toasted flatbread or whole wheat smothered with roasted red pepper hummus, fresh avocado, tomato, olive oil, red pepper flakes & topped off with seasoning. Upgrade to a Flatbread for additional $2.00', sizes: [['Regular', 5]] },
       { name: 'Best Burrito of the South', popular: true, desc: 'Get things done after enjoying this protein packed burrito stuffed with Colby cheese, sausage crumbles, bacon, sautéed peppers, & scrambled eggs. Served with either salsa or chipotle ranch on the side. Make it a Bowl without tortilla at same cost.', sizes: [['Regular', 6.5]] },
       { name: "Lil' Bit Nutty", desc: 'Almond butter or peanut butter spread onto artisan toast & topped with banana, honey or agave & cinnamon.', sizes: [['Regular', 5]] },
       { name: 'Rise & Shine / Maple Waffle Sammy', desc: 'Create your own sammy with your choice of bread stacked with egg patty, your choice of cheese, & your choice of meat (or double the egg instead of meat). Make it a little sweeter with our Maple Waffle Sammy for an additional $1.00 Jazz it up with avocado, leafy greens, tomato, and spicy mayo for additional $1.00.', sizes: [['Regular', 6.5]] },
@@ -118,7 +118,7 @@ export const categories = [
     short: 'Chillers',
     blurb: 'Icy blended frappes. Add a shot of espresso for an extra boost.',
     items: [
-      { name: 'Vanilla Chai Chiller', photo: '/photos/menu-vanilla-chai-chiller.webp', desc: 'Just the right amount of sweet and spicy black tea, honey, vanilla and spices, creating the perfect cup of icy blended chai.', sizes: [['Regular 16 oz', 5.5], ['Large 24 oz', 6]] },
+      { name: 'Vanilla Chai Chiller', desc: 'Just the right amount of sweet and spicy black tea, honey, vanilla and spices, creating the perfect cup of icy blended chai.', sizes: [['Regular 16 oz', 5.5], ['Large 24 oz', 6]] },
       { name: 'Dulce de Leche Chiller', desc: 'Dulce de leche is a creamy confection made with sugar and milk that are slow-cooked for deep caramel flavor. Our take on the Latin American favorite stays true to its inspiration, with full-bodied Arabica coffee, sweet, silky caramel flavor and butterscotch candy pieces. Topped with whipped cream and caramel drizzle.', sizes: [['Regular 16 oz', 5.5], ['Large 24 oz', 6]] },
       { name: '"Almond Joy" Chiller', desc: 'Rich Chocolate and Coconut flavors mixed into an icy blended beverage. Topped with whipped cream and drizzled with chocolate.', sizes: [['Regular 16 oz', 5.5], ['Large 24 oz', 6]] },
       { name: 'Cotton Candy Chiller', desc: "A great kid's treat (that adults love as well!). A nostalgic cotton candy flavor, topped with whipped cream.", sizes: [['16 oz', 5.5], ['24 oz', 6]] },
@@ -166,3 +166,39 @@ export const business = {
   mealPrep: 'http://www.joyscookingclasses.com/joy-full-meal-prep',
   roaster: 'Mylke Coffee, Island, KY',
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHOTOS. Real cafe photos where they exist ("real"); otherwise a licensed
+// Unsplash photo matched to the published recipe ("stock"), shown with a small
+// "Sample photo" tag until the owner supplies her own. Replace a file in
+// public/photos/menu/ with the same name and change `stock` to false.
+// ─────────────────────────────────────────────────────────────────────────────
+const REAL = {
+  'Latte': '/photos/mocha-happy-sleeve.webp',
+  'Happy Acai Bowl': '/photos/menu-happy-acai.webp',
+  'Peanut Butter Passion Acai Bowl': '/photos/acai-bowl-booth.webp',
+  'Avocado Toast': '/photos/menu-avocado-toast.webp',
+  'Vanilla Chai Chiller': '/photos/menu-vanilla-chai-chiller.webp',
+};
+const STOCK = {
+  'Americano': 'americano', 'Cappuccino': 'cappuccino', 'Chai Latte': 'chai-latte', 'Nitro Cold Brew': 'nitro-cold-brew',
+  'Drip Coffee': 'drip-coffee', 'Espresso': 'espresso', 'Hot Chocolate': 'hot-chocolate',
+  'Banana Bread Latte': 'banana-bread-latte', 'Wedding Cake Latte': 'wedding-cake-latte', 'Caramel Apple Butter Chai': 'caramel-apple-butter-chai',
+  'Pumpkin Caramel Cookie Butter Latte': 'pumpkin-caramel-cookie-butter-latte', 'Pumpkin Caramel Cookie Butter Iced Nitro Cold Brew': 'pumpkin-nitro',
+  'Banana Peanut Butter Fudge Latte': 'banana-pb-fudge-latte', 'German Chocolate Cake Latte': 'german-chocolate-cake-latte',
+  'Maple Nut Goodie Latte': 'maple-nut-goodie-latte', 'Mellow Matcha Iced Latte': 'mellow-matcha',
+  'Berry Kind Smoothie': 'berry-kind', 'Gentle George Smoothie': 'gentle-george', 'Green Goodness Smoothie': 'green-goodness',
+  'Groovy Love Smoothie': 'groovy-love', 'PB & Joy Smoothie': 'pb-and-joy', 'Peacefull Sunshine': 'peacefull-sunshine',
+  'Main Squeeze Juice': 'main-squeeze', 'Fruit Root Juice': 'fruit-root', 'Old Faithful Juice': 'old-faithful', 'Joyous Jade Juice': 'joyous-jade',
+  'Ginger Shot': 'ginger-shot', 'Turmeric Shot': 'turmeric-shot',
+  'The Ultimate': 'the-ultimate', 'Best Burrito of the South': 'best-burrito', "Lil' Bit Nutty": 'lil-bit-nutty',
+  'Rise & Shine / Maple Waffle Sammy': 'rise-and-shine', 'Cinnamon Roll': 'cinnamon-roll',
+  'Soup of the Day': 'soup', 'Chicken Caesar Salad': 'chicken-caesar', "Chef's Choice Salad": 'chefs-choice',
+  'Summer Berry Splender Salad': 'summer-berry', 'The Gobbler Sammy': 'gobbler', 'Chicken Salad Sammy': 'chicken-salad-sammy',
+  'Virtuous Veggie Wrap': 'veggie-wrap', 'Chicken Bacon Ranch Flatbread': 'cbr-flatbread', 'Pesto Chicken Flatbread': 'pesto-flatbread',
+  'Dulce de Leche Chiller': 'dulce-de-leche', '"Almond Joy" Chiller': 'almond-joy', 'Cotton Candy Chiller': 'cotton-candy',
+};
+for (const c of categories) for (const it of c.items) {
+  if (REAL[it.name]) { it.photo = REAL[it.name]; it.stock = false; }
+  else if (STOCK[it.name]) { it.photo = `/photos/menu/${STOCK[it.name]}.webp`; it.stock = true; }
+}

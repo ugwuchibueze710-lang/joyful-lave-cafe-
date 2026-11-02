@@ -14,8 +14,9 @@ export function renderMenu() {
   const itemHTML = (it) => {
     const low = Math.min(...it.sizes.map((s) => s[1]));
     const multi = it.sizes.length > 1;
+    const alt = it.stock ? `${esc(it.name)} (sample photo)` : `${esc(it.name)}, photographed at the cafe`;
     return `<article class="item${it.photo ? ' item--photo' : ''}">
-      ${it.photo ? `<div class="item__photo"><img loading="lazy" src="${it.photo}" alt="${esc(it.name)} — photo from the cafe" width="600" height="375" /></div>` : ''}
+      ${it.photo ? `<div class="item__photo"><img loading="lazy" decoding="async" src="${it.photo}" alt="${alt}" width="600" height="450" /><span class="item__src${it.stock ? '' : ' is-real'}">${it.stock ? 'Sample photo' : 'From the cafe'}</span></div>` : ''}
       ${it.feature ? '<span class="badge">Drink special</span>' : it.popular ? '<span class="badge">Popular</span>' : ''}
       <div class="item__top"><h4>${esc(it.name)}</h4><span class="item__price">${multi ? '<small style="font:600 13px var(--body);color:var(--ink-soft)">from </small>' : ''}${money(low)}</span></div>
       <p>${esc(it.desc)}</p>
@@ -35,6 +36,20 @@ export function renderMenu() {
     });
     panel.innerHTML = html || `<p class="menu__empty">Nothing matches “${esc(q)}”. Try another word — or <a href="${ORDER_URL}" target="_blank" rel="noopener">browse online ordering</a>.</p>`;
     panel.dataset.count = count;
+    panel.querySelectorAll('.item').forEach((el, i) => { el.style.setProperty('--d', `${Math.min(i, 12) * 40}ms`); el.classList.add('is-in'); });
+  }
+  // 3D tilt + light glare that follows the cursor
+  if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    panel.addEventListener('pointermove', (e) => {
+      const el = e.target.closest('.item'); if (!el) return;
+      const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      el.style.setProperty('--rx', `${(0.5 - y) * 7}deg`); el.style.setProperty('--ry', `${(x - 0.5) * 9}deg`);
+      el.style.setProperty('--gx', `${x * 100}%`); el.style.setProperty('--gy', `${y * 100}%`);
+    });
+    panel.addEventListener('pointerout', (e) => {
+      const el = e.target.closest('.item'); if (!el || el.contains(e.relatedTarget)) return;
+      el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg');
+    });
   }
   tabs.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;

@@ -16,7 +16,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500..900&family=Geist:wght@400..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="preload" as="image" href="/photos/joyfull-logo.webp" />
   <script type="application/ld+json">
   {
@@ -103,10 +103,10 @@
         </div>
         <a class="hero__special" href="#menu" data-jump="specials">
           <span class="tag">Drink Special</span>
-          <span><b>Banana Bread Latte</b> — espresso, milk, caramel, banana &amp; cinnamon. Hot, iced or blended. <b>$6</b></span>
+          <span><b>Banana Bread Latte</b> — rich espresso, milk, caramel, banana, and cinnamon. Hot, iced, or blended. <b>$6</b></span>
         </a>
       </div>
-      <div class="hero__hint"><span>Move your cursor — the latte reacts</span><i class="scroll-dot"></i></div>
+      <div class="hero__hint"><span>Move over the photo — look through the glass</span><i class="scroll-dot"></i></div>
     </section>
 
     <!-- ░░ JOURNEY THROUGH THE REAL MENU ░░ -->
@@ -127,42 +127,46 @@
           <h2>The Happy Acai Bowl.</h2>
           <p>Pineapple, apple &amp; acai, topped with gluten-free granola, coconut, cacao nibs, strawberry, blueberry, banana, chia seeds &amp; almond butter.</p>
           <ul class="chips"><li>Happy Acai $11.50</li><li>Peanut Butter Passion $11.50</li><li>Tropical Colada Blue Spirulina $11.50</li></ul>
-          <p class="hint-line">Hover the toppings to see what’s on it.</p>
+          <a class="link-arrow" href="#menu" data-jump="acai">Acai &amp; smoothies</a>
         </div>
       </article>
+
 
       <article class="chapter" data-station="juice">
         <div class="chapter__card">
           <p class="chapter__num">03 — Juice</p>
           <h2>Fresh squeezed, or straight from the cooler.</h2>
-          <p>Fresh Squeezed <b>$8.50</b> · Cooler Bottles <b>$7.50</b>. Tap a juice to refill the bottle.</p>
+          <p>Fresh Squeezed <b>$8.50</b> · Cooler Bottles <b>$7.50</b>. Pick a juice.</p>
           <div class="juice-picker" role="tablist" aria-label="Choose a juice">
-            <button role="tab" class="is-on" data-juice="0" aria-selected="true"><i style="--c:#F28A1E"></i>Main Squeeze<small>Lemon, orange &amp; carrot</small></button>
-            <button role="tab" data-juice="1" aria-selected="false"><i style="--c:#9B1B3C"></i>Fruit Root<small>Beet, carrot, ginger &amp; apple</small></button>
-            <button role="tab" data-juice="2" aria-selected="false"><i style="--c:#B8452E"></i>Old Faithful<small>Lemon, celery, cucumber, carrot, apple, beet &amp; ginger</small></button>
-            <button role="tab" data-juice="3" aria-selected="false"><i style="--c:#6DAA2C"></i>Joyous Jade<small>Lemon, spinach, cucumber &amp; apple</small></button>
+            <button role="tab" class="is-on" data-juice="main-squeeze" aria-selected="true"><i style="--c:#F28A1E"></i>Main Squeeze<small>Lemon, orange &amp; carrot</small></button>
+            <button role="tab" data-juice="fruit-root" aria-selected="false"><i style="--c:#9B1B3C"></i>Fruit Root<small>Beet, carrot, ginger, carrot, &amp; apple</small></button>
+            <button role="tab" data-juice="old-faithful" aria-selected="false"><i style="--c:#B8452E"></i>Old Faithful<small>Lemon, celery, cucumber, carrot, apple, beet &amp; ginger</small></button>
+            <button role="tab" data-juice="joyous-jade" aria-selected="false"><i style="--c:#6DAA2C"></i>Joyous Jade<small>Lemon, spinach, cucumber, &amp; apple</small></button>
           </div>
+          <p class="sample-note">Sample photos</p>
         </div>
       </article>
-
       <article class="chapter" data-station="breakfast">
         <div class="chapter__card">
           <p class="chapter__num">04 — Breakfast</p>
-          <h2>The Ultimate, layer by layer.</h2>
-          <p>A buttery croissant stacked high with eggs, crispy bacon, sausage, avocado, house-made garlic tomato jam &amp; Pepper Jack cheese. <b>$8</b></p>
-          <ul class="chips"><li>Avocado Toast $5</li><li>Best Burrito of the South $6.50</li><li>Rise &amp; Shine $6.50</li><li>Cinnamon Roll $4.50</li></ul>
+          <h2>Avocado Toast.</h2>
+          <p>Toasted flatbread or whole wheat smothered with roasted red pepper hummus, fresh avocado, tomato, olive oil, red pepper flakes &amp; topped off with seasoning. <b>$5</b></p>
+          <ul class="chips"><li>The Ultimate $8</li><li>Best Burrito of the South $6.50</li><li>Rise &amp; Shine $6.50</li><li>Cinnamon Roll $4.50</li></ul>
+          <a class="link-arrow" href="#menu" data-jump="breakfast">Full breakfast menu</a>
         </div>
       </article>
+
 
       <article class="chapter" data-station="lunch">
         <div class="chapter__card">
           <p class="chapter__num">05 — Salads &amp; Wraps</p>
-          <h2>Summer Berry, made to order.</h2>
-          <p>Tender baby spinach, sweet strawberries, blueberries, cranberry pecan crunch, Feta &amp; poppy seed vinaigrette. <b>$10.50</b> — add chicken for $2.</p>
+          <h2>Summer Berry Splender.</h2>
+          <p>Tender baby spinach topped with sweet strawberries, blueberries, cranberry pecan crunch, Feta cheese &amp; poppy seed vinaigrette. <b>$10.50</b> — add chicken or chicken salad for $2.00.</p>
           <ul class="chips"><li>Chicken Caesar $10.50</li><li>Virtuous Veggie Wrap $10</li><li>The Gobbler $10</li><li>Pesto Chicken Flatbread $10</li></ul>
+          <a class="link-arrow" href="#menu" data-jump="lunch">Soups, salads, sammies &amp; wraps</a>
+          <p class="sample-note">Sample photo</p>
         </div>
       </article>
-
       <article class="chapter" data-station="chillers">
         <div class="chapter__card">
           <p class="chapter__num">06 — Chillers</p>
@@ -277,7 +281,7 @@
   <footer class="foot">
     <img src="/photos/joyfull-logo.webp" alt="" width="90" height="76" loading="lazy" />
     <p>© <span id="year"></span> Joy-Full Java + Juice · Owensboro, Kentucky</p>
-    <p class="foot__small">3D scenes are illustrations of real menu items. Photos are from the cafe.</p>
+    <p class="foot__small">Photos marked “From the cafe” are the cafe’s own. Others are sample photos until owner photos replace them.</p>
   </footer>
 
   <noscript><style>.intro{display:none}body.is-loading{overflow:auto}</style></noscript>

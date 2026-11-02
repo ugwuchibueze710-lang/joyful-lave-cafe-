@@ -73,7 +73,7 @@ function reel() {
 if (matchMedia('(hover: hover) and (pointer: fine)').matches && !reduced) {
   $$('.magnetic').forEach((b) => {
     b.addEventListener('pointermove', (e) => { const r = b.getBoundingClientRect(); gsap.to(b, { x: (e.clientX - r.left - r.width / 2) * 0.25, y: (e.clientY - r.top - r.height / 2) * 0.35, duration: 0.4, ease: 'power3.out' }); });
-    b.addEventListener('pointerleave', () => gsap.to(b, { x: 0, y: 0, duration: 0.7, ease: 'elastic.out(1, .4)' }));
+    b.addEventListener('pointerleave', () => gsap.to(b, { x: 0, y: 0, duration: 0.8, ease: 'expo.out' }));
   });
   const cur = $('#cursor'); const qx = gsap.quickTo(cur, 'x', { duration: 0.25, ease: 'power3' }), qy = gsap.quickTo(cur, 'y', { duration: 0.25, ease: 'power3' });
   addEventListener('pointermove', (e) => { qx(e.clientX); qy(e.clientY); cur.classList.toggle('is-big', !!e.target.closest('a,button,summary') || document.body.classList.contains('is-hovering-3d')); }, { passive: true });
@@ -112,24 +112,25 @@ async function boot() {
   const bump = (to) => gsap.to({ v: shown }, { v: to, duration: 0.6, ease: 'power2.out', onUpdate() { shown = this.targets()[0].v; pctEl.textContent = Math.round(shown); } });
   bump(12);
 
-  const assets = Promise.all([document.fonts?.ready, ...['/photos/joyfull-logo.webp'].map((src) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = src; }))]);
+  const assets = Promise.all([document.fonts?.ready, ...['/photos/joyfull-logo.webp', '/photos/acai-bowl-booth.webp'].map((src) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = src; }))]);
   assets.then(() => bump(45));
 
   if (canGL) {
     try {
-      const { World } = await import('./three/world.js');
-      bump(75);
-      world = new World($('#gl'), $('#labels'));
-      world.onFocus = (k) => (document.body.dataset.station = k);
-      $$('.juice-picker button').forEach((b) => b.addEventListener('click', () => {
-        $$('.juice-picker button').forEach((x) => { x.classList.toggle('is-on', x === b); x.setAttribute('aria-selected', String(x === b)); });
-        world.setJuice(Number(b.dataset.juice));
-      }));
+      const { PhotoWorld } = await import('./gl/photoworld.js');
+      bump(60);
+      world = new PhotoWorld($('#gl'));
+      await world.ready;
+      bump(85);
       world.prepareIntro();
       intro.classList.add('has-gl');
+      $$('.juice-picker button').forEach((b) => b.addEventListener('click', () => {
+        $$('.juice-picker button').forEach((x) => { x.classList.toggle('is-on', x === b); x.setAttribute('aria-selected', String(x === b)); });
+        world.setJuice(b.dataset.juice);
+      }));
       const loop = () => { world.tick(); requestAnimationFrame(loop); };
       requestAnimationFrame(loop);
-      addEventListener('load', () => world.measure());
+      addEventListener('load', () => { world.measure(); world.scroll(window.scrollY, 0); });
     } catch (err) {
       console.error(err); world = null;
       $('#stage').classList.add('is-hidden');
@@ -153,7 +154,7 @@ async function boot() {
   ui.to('.intro__line span', { opacity: 1, y: 0, stagger: 0.08, duration: 0.8, ease: 'expo.out' }, 1.0);
   ui.to('.intro__line span', { opacity: 0, y: -24, stagger: 0.03, duration: 0.4, ease: 'power2.in' }, 2.2);
   ui.to('.intro__oval', { scale: Math.hypot(innerWidth, innerHeight) / 6, duration: 0.7, ease: 'expo.in' }, 2.25);
-  ui.to('.intro__logo', { opacity: 1, scale: 1, rotate: 0, duration: 0.6, ease: 'back.out(1.8)' }, 2.75);
+  ui.to('.intro__logo', { opacity: 1, scale: 1, rotate: 0, duration: 0.8, ease: 'expo.out' }, 2.75);
   ui.to('.intro__logo', { opacity: 0, scale: 1.3, duration: 0.45, ease: 'power2.in' }, 3.4);
   ui.to('.intro__oval', { opacity: 0, duration: 0.5 }, 3.45);
   ui.add(() => { finishIntro(); heroReveal(); }, 3.5);
