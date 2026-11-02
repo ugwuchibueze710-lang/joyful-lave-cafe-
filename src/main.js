@@ -14,7 +14,12 @@ $('#year').textContent = new Date().getFullYear();
 
 // split hero title into words for the reveal
 const title = $('.hero__title');
-title.innerHTML = title.innerHTML.replace(/(<em>.*?<\/em>|[^\s<]+)/g, (w) => `<span class="w"><span>${w}</span></span>`);
+const signEl = $('#neonSign');
+signEl.replaceWith(document.createTextNode('§NEON§'));
+title.innerHTML = title.innerHTML.replace(/[^\s<]+/g, (w) => w === '§NEON§' ? w : `<span class="w"><span>${w}</span></span>`);
+title.innerHTML = title.innerHTML.replace('§NEON§', '<span id="neonSlot"></span>');
+$('#neonSlot').replaceWith(signEl);
+import('./neon.js').then(({ mountNeon }) => { window.__neon = mountNeon({ sign: signEl, switchEl: $('#neonSwitch'), hero: $('.hero') }); });
 
 /* ── smooth scroll ─────────────────────────────────── */
 const lenis = reduced ? null : new Lenis({ lerp: 0.09, wheelMultiplier: 0.9, smoothWheel: true });
@@ -94,6 +99,7 @@ const intro = $('#intro'), pctEl = $('#introPct');
 let skipped = false;
 function heroReveal() {
   gsap.fromTo('.hero__title .w > span', { yPercent: 110 }, { yPercent: 0, duration: 1.1, stagger: 0.06, ease: 'expo.out' });
+  gsap.fromTo('#neonSign', { opacity: 0, y: 30, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 1.2, delay: 0.15, ease: 'expo.out', onStart: () => window.__neon?.reveal() });
   gsap.fromTo('.hero .eyebrow, .hero__lede, .hero__actions, .hero__special, .hero__hint', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 1, stagger: 0.08, delay: 0.25, ease: 'expo.out' });
 }
 function finishIntro() {
@@ -120,6 +126,7 @@ async function boot() {
       const { PhotoWorld } = await import('./gl/photoworld.js');
       bump(60);
       world = new PhotoWorld($('#gl'));
+      document.body.classList.add('gl-on');
       await world.ready;
       bump(85);
       world.prepareIntro();

@@ -92,14 +92,18 @@
 
   <main id="main">
     <!-- ░░ HERO ░░ -->
-    <section class="hero" id="top" data-station="hero">
+    <section class="hero" id="top" data-station="hero" data-neon="on">
       <div class="hero__copy">
         <p class="eyebrow">Owensboro, Kentucky · KY 54</p>
-        <h1 class="hero__title split">Experience <em>JOY</em> through food and drinks.</h1>
+        <h1 class="hero__title split">Experience <span class="neon" id="neonSign"><span class="sr">JOY</span><span class="neon__rig" aria-hidden="true"><span class="neon__spill"></span><span class="neon__shadow"></span><span class="neon__plate"><i class="standoff"></i><i class="standoff"></i><i class="standoff"></i><i class="standoff"></i></span><svg class="neon__tubes" focusable="false"></svg></span></span> through food and drinks.</h1>
         <p class="hero__lede">EnJOY locally-sourced ingredients with our beautifully crafted espresso, smoothies, acai bowls, food and juices.</p>
         <div class="hero__actions">
           <a class="btn btn--red btn--lg magnetic" href="https://order.chownow.com/order/38929/locations/59239" target="_blank" rel="noopener">Order Online</a>
           <a class="btn btn--ghost btn--lg magnetic" href="#menu">See the Menu</a>
+          <button class="rocker" id="neonSwitch" type="button" aria-pressed="true" aria-label="Turn the JOY neon sign off">
+            <span class="rocker__plate"><i class="screw"></i><span class="rocker__well"><span class="rocker__paddle"><b class="on">I</b><b class="off">O</b></span></span><i class="screw"></i></span>
+            <span class="rocker__meta"><span class="rocker__led"></span>Neon</span>
+          </button>
         </div>
         <a class="hero__special" href="#menu" data-jump="specials">
           <span class="tag">Drink Special</span>
