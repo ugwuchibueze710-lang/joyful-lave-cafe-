@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Joy-Full Java + Juice | Coffee, Juice, Smoothies & Acai Bowls in Owensboro, KY</title>
+  <meta name="description" content="Joy-Full Java + Juice on KY 54 in Owensboro: espresso from local roaster Mylke Coffee, fresh-squeezed juice, smoothies, acai bowls, breakfast sandwiches, salads and wraps. Order online for pickup." />
+  <meta name="theme-color" content="#EC3B3A" />
+  <link rel="canonical" href="https://thejoyfullcafe.com/" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Joy-Full Java + Juice — Owensboro, KY" />
+  <meta property="og:description" content="Experience JOY through food and drinks. Coffee, fresh juice, smoothies, acai bowls and more on KY 54." />
+  <meta property="og:image" content="/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <link rel="preload" as="image" href="/photos/joyfull-logo.webp" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CafeOrCoffeeShop",
+    "name": "Joy-Full Java + Juice",
+    "url": "https://thejoyfullcafe.com/",
+    "telephone": "+1-270-478-4409",
+    "image": "https://thejoyfullcafe.com/og-image.jpg",
+    "logo": "https://thejoyfullcafe.com/photos/joyfull-logo.webp",
+    "servesCuisine": ["Coffee", "Juice Bar", "Smoothies", "Acai Bowls", "Breakfast", "Sandwiches", "Salads"],
+    "priceRange": "$",
+    "address": { "@type": "PostalAddress", "streetAddress": "3811 Leitchfield Rd, Unit 103", "addressLocality": "Owensboro", "addressRegion": "KY", "postalCode": "42303", "addressCountry": "US" },
+    "geo": { "@type": "GeoCoordinates", "latitude": 37.7504311, "longitude": -87.049118 },
+    "founder": { "@type": "Person", "name": "Ashley Webb" },
+    "hasMenu": "https://order.chownow.com/order/38929/locations/59239",
+    "potentialAction": { "@type": "OrderAction", "target": "https://order.chownow.com/order/38929/locations/59239" },
+    "openingHoursSpecification": [
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Sunday", "opens": "12:00", "closes": "15:00" },
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday"], "opens": "06:00", "closes": "15:00" },
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Wednesday", "Thursday"], "opens": "06:00", "closes": "18:00" },
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Friday", "opens": "06:00", "closes": "16:00" },
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "08:00", "closes": "15:00" }
+    ],
+    "sameAs": ["https://www.facebook.com/158647707337785", "https://www.instagram.com/joyfulljavajuice"]
+  }
+  </script>
+</head>
+<body class="is-loading">
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- ░░ OPENING ░░ -->
+  <div class="intro" id="intro" aria-hidden="true">
+    <div class="intro__oval"></div>
+    <div class="intro__center">
+      <img class="intro__logo" src="/photos/joyfull-logo.webp" alt="" width="560" height="473" />
+      <p class="intro__line"><span>Experience</span> <span>JOY</span> <span>through</span> <span>food</span> <span>and</span> <span>drinks.</span></p>
+    </div>
+    <div class="intro__meter"><span id="introPct">0</span><i>%</i></div>
+    <button class="intro__skip" id="introSkip" type="button">Skip intro</button>
+  </div>
+
+  <!-- ░░ WEBGL STAGE (fixed, behind content) ░░ -->
+  <div class="stage" id="stage" aria-hidden="true">
+    <canvas id="gl"></canvas>
+    <div class="stage__labels" id="labels"></div>
+  </div>
+  <div class="cursor" id="cursor" aria-hidden="true"><span></span></div>
+
+  <!-- ░░ HEADER ░░ -->
+  <header class="nav" id="nav">
+    <a class="nav__brand" href="#top" aria-label="Joy-Full Java + Juice home">
+      <img src="/photos/joyfull-logo.webp" alt="Joy-Full Java + Juice logo" width="74" height="62" />
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#journey">Taste</a>
+      <a href="#menu">Menu</a>
+      <a href="#story">Our Story</a>
+      <a href="#more">Meal Prep &amp; Catering</a>
+      <a href="#visit">Visit</a>
+    </nav>
+    <div class="nav__cta">
+      <span class="open-chip" data-open-chip><i></i><b>Checking hours…</b></span>
+      <a class="btn btn--red magnetic" href="https://order.chownow.com/order/38929/locations/59239" target="_blank" rel="noopener">Order Online</a>
+      <button class="nav__burger" id="burger" aria-expanded="false" aria-controls="drawer" aria-label="Open menu"><span></span><span></span></button>
+    </div>
+  </header>
+  <div class="drawer" id="drawer" hidden>
+    <a href="#journey">Taste</a><a href="#menu">Menu</a><a href="#story">Our Story</a><a href="#more">Meal Prep &amp; Catering</a><a href="#visit">Visit</a>
+    <a class="btn btn--red" href="https://order.chownow.com/order/38929/locations/59239" target="_blank" rel="noopener">Order Online</a>
+    <a class="drawer__phone" href="tel:+12704784409">270-478-4409</a>
+  </div>
+
+  <main id="main">
+    <!-- ░░ HERO ░░ -->
+    <section class="hero" id="top" data-station="hero">
+      <div class="hero__copy">
+        <p class="eyebrow">Owensboro, Kentucky · KY 54</p>
+        <h1 class="hero__title split">Experience <em>JOY</em> through food and drinks.</h1>
+        <p class="hero__lede">EnJOY locally-sourced ingredients with our beautifully crafted espresso, smoothies, acai bowls, food and juices.</p>
+        <div class="hero__actions">
+          <a class="btn btn--red btn--lg magnetic" href="https://order.chownow.com/order/38929/locations/59239" target="_blank" rel="noopener">Order Online</a>
+          <a class="btn btn--ghost btn--lg magnetic" href="#menu">See the Menu</a>
+        </div>
+        <a class="hero__special" href="#menu" data-jump="specials">
+          <span class="tag">Drink Special</span>
+          <span><b>Banana Bread Latte</b> — espresso, milk, caramel, banana &amp; cinnamon. Hot, iced or blended. <b>$6</b></span>
+        </a>
+      </div>
+      <div class="hero__hint"><span>Move your cursor — the latte reacts</span><i class="scroll-dot"></i></div>
+    </section>
+
+    <!-- ░░ JOURNEY THROUGH THE REAL MENU ░░ -->
+    <section class="journey" id="journey" aria-label="A tour of the menu">
+      <article class="chapter" data-station="java">
+        <div class="chapter__card">
+          <p class="chapter__num">01 — Java</p>
+          <h2>Locally roasted. Poured with JOY.</h2>
+          <p>Every espresso and drip coffee is roasted by <b>Mylke Coffee</b> in Island, Kentucky. Lattes come hot, iced or blended — regular gets two shots, large gets three.</p>
+          <ul class="chips"><li>Latte $5</li><li>Cappuccino $5</li><li>Nitro Cold Brew $4.25</li><li>Drip $3</li></ul>
+          <a class="link-arrow" href="#menu" data-jump="java">Coffee, teas &amp; more</a>
+        </div>
+      </article>
+
+      <article class="chapter" data-station="acai">
+        <div class="chapter__card">
+          <p class="chapter__num">02 — Acai</p>
+          <h2>The Happy Acai Bowl.</h2>
+          <p>Pineapple, apple &amp; acai, topped with gluten-free granola, coconut, cacao nibs, strawberry, blueberry, banana, chia seeds &amp; almond butter.</p>
+          <ul class="chips"><li>Happy Acai $11.50</li><li>Peanut Butter Passion $11.50</li><li>Tropical Colada Blue Spirulina $11.50</li></ul>
+          <p class="hint-line">Hover the toppings to see what’s on it.</p>
+        </div>
+      </article>
+
+      <article class="chapter" data-station="juice">
+        <div class="chapter__card">
+          <p class="chapter__num">03 — Juice</p>
+          <h2>Fresh squeezed, or straight from the cooler.</h2>
+          <p>Fresh Squeezed <b>$8.50</b> · Cooler Bottles <b>$7.50</b>. Tap a juice to refill the bottle.</p>
+          <div class="juice-picker" role="tablist" aria-label="Choose a juice">
+            <button role="tab" class="is-on" data-juice="0" aria-selected="true"><i style="--c:#F28A1E"></i>Main Squeeze<small>Lemon, orange &amp; carrot</small></button>
+            <button role="tab" data-juice="1" aria-selected="false"><i style="--c:#9B1B3C"></i>Fruit Root<small>Beet, carrot, ginger &amp; apple</small></button>
+            <button role="tab" data-juice="2" aria-selected="false"><i style="--c:#B8452E"></i>Old Faithful<small>Lemon, celery, cucumber, carrot, apple, beet &amp; ginger</small></button>
+            <button role="tab" data-juice="3" aria-selected="false"><i style="--c:#6DAA2C"></i>Joyous Jade<small>Lemon, spinach, cucumber &amp; apple</small></button>
+          </div>
+        </div>
+      </article>
+
+      <article class="chapter" data-station="breakfast">
+        <div class="chapter__card">
+          <p class="chapter__num">04 — Breakfast</p>
+          <h2>The Ultimate, layer by layer.</h2>
+          <p>A buttery croissant stacked high with eggs, crispy bacon, sausage, avocado, house-made garlic tomato jam &amp; Pepper Jack cheese. <b>$8</b></p>
+          <ul class="chips"><li>Avocado Toast $5</li><li>Best Burrito of the South $6.50</li><li>Rise &amp; Shine $6.50</li><li>Cinnamon Roll $4.50</li></ul>
+        </div>
+      </article>
+
+      <article class="chapter" data-station="lunch">
+        <div class="chapter__card">
+          <p class="chapter__num">05 — Salads &amp; Wraps</p>
+          <h2>Summer Berry, made to order.</h2>
+          <p>Tender baby spinach, sweet strawberries, blueberries, cranberry pecan crunch, Feta &amp; poppy seed vinaigrette. <b>$10.50</b> — add chicken for $2.</p>
+          <ul class="chips"><li>Chicken Caesar $10.50</li><li>Virtuous Veggie Wrap $10</li><li>The Gobbler $10</li><li>Pesto Chicken Flatbread $10</li></ul>
+        </div>
+      </article>
+
+      <article class="chapter" data-station="chillers">
+        <div class="chapter__card">
+          <p class="chapter__num">06 — Chillers</p>
+          <h2>Icy, blended, topped with whipped cream.</h2>
+          <p>The Vanilla Chai Chiller: sweet and spicy black tea, honey, vanilla and spices, blended icy. <b>$5.50</b></p>
+          <ul class="chips"><li>Dulce de Leche</li><li>“Almond Joy”</li><li>Cotton Candy</li><li>Kona Mocha</li><li>“Nutella”</li><li>White Chocolate</li></ul>
+        </div>
+      </article>
+    </section>
+
+    <!-- ░░ MENU ░░ -->
+    <section class="menu" id="menu" data-station="menu">
+      <div class="menu__head">
+        <p class="eyebrow">The whole menu</p>
+        <h2 class="section-title">Menu</h2>
+        <p class="menu__note">Prices from our online ordering menu. Customizations welcome.</p>
+      </div>
+      <div class="menu__tools">
+        <div class="menu__tabs" role="tablist" aria-label="Menu categories" id="menuTabs"></div>
+        <label class="menu__search"><span class="sr">Search the menu</span><input id="menuSearch" type="search" placeholder="Search — try “banana” or “chicken”" autocomplete="off" /></label>
+      </div>
+      <div class="menu__panel" id="menuPanel" role="tabpanel"></div>
+      <details class="custom" id="customizations">
+        <summary>Make it yours — milks, flavors, boosters &amp; add-ons</summary>
+        <div class="custom__grid" id="customGrid"></div>
+      </details>
+      <div class="menu__order">
+        <a class="btn btn--red btn--lg magnetic" href="https://order.chownow.com/order/38929/locations/59239" target="_blank" rel="noopener">Order for pickup on ChowNow</a>
+        <a class="btn btn--ghost btn--lg" href="tel:+12704784409">Or call ahead: 270-478-4409</a>
+      </div>
+    </section>
+
+    <!-- ░░ FROM THE CAFE (real photos) ░░ -->
+    <section class="reel" aria-label="Photos from the cafe" data-station="menu">
+      <div class="reel__track" id="reel">
+        <figure><img loading="lazy" src="/photos/acai-bowl-booth.webp" alt="Acai bowl topped with strawberries, blueberries, banana and almond butter on a table by the purple booth" width="1200" height="1353" /><figcaption>Acai bowl by the booth</figcaption></figure>
+        <figure><img loading="lazy" src="/photos/mocha-happy-sleeve.webp" alt="Mocha in a cup with a hand-written ‘happy :)’ sleeve on the red counter" width="1000" height="1333" /><figcaption>“happy :)” — written on every sleeve</figcaption></figure>
+        <figure><img loading="lazy" src="/photos/avocado-toast-mug-shelves.webp" alt="Avocado toast on a red plate in front of the shelves of colorful mugs and the JOY sign" width="1000" height="1333" /><figcaption>Avocado toast &amp; the mug wall</figcaption></figure>
+        <figure><img loading="lazy" src="/photos/menu-vanilla-chai-chiller.webp" alt="Vanilla Chai Chiller topped with whipped cream and cinnamon on the granite counter" width="1000" height="1012" /><figcaption>Vanilla Chai Chiller</figcaption></figure>
+        <figure><img loading="lazy" src="/photos/promo-acai-cappuccino-cinnamon-roll.webp" alt="Acai bowl, cappuccino in a red mug and a cinnamon roll with icing" width="1080" height="1035" /><figcaption>Acai, cappuccino &amp; cinnamon roll</figcaption></figure>
+        <figure><img loading="lazy" src="/photos/menu-avocado-toast.webp" alt="Avocado toast with hummus, cherry tomatoes and red pepper flakes on a blue plate" width="1000" height="1000" /><figcaption>Avocado Toast — $5</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- ░░ STORY ░░ -->
+    <section class="story" id="story" data-station="story">
+      <div class="story__photo">
+        <img loading="lazy" src="/photos/owner-ashley-counter.webp" alt="Owner Ashley Webb smiling behind the red counter with the white JOY sign and espresso machine" width="1032" height="698" />
+      </div>
+      <div class="story__copy">
+        <p class="eyebrow">Our Story</p>
+        <h2 class="section-title">The beginning.</h2>
+        <p>As a young 16-year-old looking for a job, <b>Ashley Webb</b> — born and raised in Owensboro — was hired at the local coffee shop, Beyond the Brim. Little did she know that her passion and JOY would be found in this industry, finding love for local businesses.</p>
+        <p>Fast forward almost 20 years and dreams are coming true. She owns and operates a cooking class and meal prep business, Joy’s Cooking Classes and Joy-Full Meal Prep — and the dream of a coffee shop and cafe came to life with <b>Joy-Full Java + Juice</b>.</p>
+        <blockquote>Our goal is to bring you a cup of JOY for your day as an escape from the world around you.</blockquote>
+        <p>Our coffee and espresso is sourced from a local roaster, Mylke. We love to use ingredients from local farmers and suppliers, providing the freshest ingredients, made with LOVE!</p>
+      </div>
+    </section>
+
+    <!-- ░░ MEAL PREP / CATERING / CLASSES ░░ -->
+    <section class="more" id="more" data-station="story">
+      <p class="eyebrow">Beyond the counter</p>
+      <h2 class="section-title">Meal Prep, Catering &amp; Cooking Classes</h2>
+      <div class="more__grid">
+        <article class="tile">
+          <h3>Joy-Full Meal Prep</h3>
+          <p>Pre-order by <b>Saturday at midnight</b> for <b>Monday pickup</b>. You’ll receive a text when your food is ready.</p>
+          <a class="link-arrow" href="http://www.joyscookingclasses.com/joy-full-meal-prep" target="_blank" rel="noopener">View menu &amp; pre-order</a>
+        </article>
+        <article class="tile">
+          <h3>Grab &amp; Go</h3>
+          <p>Grab-and-go meals and take-and-bakes throughout the week on the cafe side.</p>
+          <a class="link-arrow" href="#visit">Stop by</a>
+        </article>
+        <article class="tile">
+          <h3>Catering &amp; Large Orders</h3>
+          <p>Available upon request. Call or text to inquire.</p>
+          <a class="link-arrow" href="sms:+12703028337">Text 270-302-8337</a>
+        </article>
+        <article class="tile">
+          <h3>Joy’s Cooking Classes</h3>
+          <p>Where it all started. Class menus and schedule can be viewed and booked online.</p>
+          <a class="link-arrow" href="http://www.joyscookingclasses.com/" target="_blank" rel="noopener">See classes</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ░░ VISIT ░░ -->
+    <section class="visit" id="visit" data-station="visit">
+      <div class="visit__card">
+        <p class="eyebrow">Come grab a cup of JOY!</p>
+        <h2 class="section-title">Visit us</h2>
+        <address>
+          <b>Joy-Full Java + Juice</b><br />
+          3811 Leitchfield Rd (KY 54), Unit 103<br />
+          Owensboro, KY 42303
+        </address>
+        <div class="visit__actions">
+          <a class="btn btn--red magnetic" href="https://www.google.com/maps/dir/?api=1&destination=3811+Leitchfield+Rd+Unit+103+Owensboro+KY+42303" target="_blank" rel="noopener">Get Directions</a>
+          <a class="btn btn--ghost" href="tel:+12704784409">270-478-4409</a>
+        </div>
+        <h3 class="hours-title">Hours <span class="open-chip" data-open-chip><i></i><b></b></span></h3>
+        <table class="hours" id="hoursTable"><caption class="sr">Weekly hours</caption></table>
+        <div class="visit__social">
+          <a href="https://www.facebook.com/158647707337785" target="_blank" rel="noopener">Facebook</a>
+          <a href="https://www.instagram.com/joyfulljavajuice" target="_blank" rel="noopener">Instagram</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <img src="/photos/joyfull-logo.webp" alt="" width="90" height="76" loading="lazy" />
+    <p>© <span id="year"></span> Joy-Full Java + Juice · Owensboro, Kentucky</p>
+    <p class="foot__small">3D scenes are illustrations of real menu items. Photos are from the cafe.</p>
+  </footer>
+
+  <noscript><style>.intro{display:none}body.is-loading{overflow:auto}</style></noscript>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
