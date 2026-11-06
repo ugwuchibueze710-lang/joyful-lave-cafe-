@@ -415,27 +415,20 @@ body.on-red .nav:not(.is-solid) .btn--red { --bg: #fff; color: var(--red); }
 
 body.gl-on .hero { background: none; }
 
-/* ── JOY marquee letters (matches the sign on the cafe counter) ───────── */
-.neon__plate, .standoff { display: none; }
+/* ── JOY neon: 3D glass tubes (neon3d.js) on the acrylic backer ───────── */
 .neon { height: 1.5em; vertical-align: -0.26em; }
-.neon__tubes { transform: translateZ(10px); }
-.neon__tubes path { fill: none; stroke-linejoin: miter; stroke-miterlimit: 3; stroke-linecap: butt; stroke-width: 34px; }
-.mq-shadow path { stroke: rgba(55, 0, 6, .5); filter: blur(7px); }
-.mq-side path { stroke: #8e0d13; }
-.mq-side path:first-child { stroke: #6d070c; }
-.mq-face path { stroke: url(#mqFace); }
-.mq-rim { transform: translate(-0.8px, -1px); }
-.mq-rim path { stroke: rgba(255, 200, 195, .45); stroke-width: 2px; fill: none; }
-.mq-face path, .mq-rim path { filter: drop-shadow(0 0 0 transparent); }
-.mq-inlay path { stroke: #fff7f0; stroke-width: 3.2px; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 calc(var(--lit) * 4px) rgba(255,240,230,.9)); opacity: calc(.75 + var(--lit) * .25); }
-.mq-socket circle { fill: #b8141b; stroke: #fff2ea; stroke-width: 1.4; }
-.mq-bulb circle { fill: color-mix(in srgb, #fff8ef calc(var(--lit) * 100%), #bfb2ac); stroke: rgba(120, 60, 50, .35); stroke-width: .8; }
-.mq-glow circle { fill: #fff4e6; filter: url(#mqGlow); opacity: calc(var(--lit) * .8); }
-.mq-halo circle { fill: #ffe2d2; filter: url(#mqHalo); opacity: calc(var(--lit) * .3); }
-.mq-shine circle { fill: #fff; opacity: calc(.55 + var(--lit) * .45); }
-.mq-face path { filter: brightness(calc(.82 + var(--lit) * .22)); }
-.neon__spill { background: radial-gradient(closest-side, rgba(255, 236, 228, .3), rgba(255, 120, 120, .14) 50%, transparent 76%); }
-.mq-face path { stroke: #e9262b; }
+.neon.is-3d .neon__tubes { visibility: hidden; }
+.neon__gl { position: absolute; left: 0; top: 0; display: block; pointer-events: none; transform: translateZ(16px);
+  /* the gas glow: tight white halo → pink → wide red bloom, scaled by --lit; contact shadow on the plate */
+  filter:
+    drop-shadow(0 0 calc(var(--lit) * 1.5px) rgba(255, 255, 255, 1))
+    drop-shadow(0 0 calc(var(--lit) * 5px) rgba(255, 190, 200, 1))
+    drop-shadow(0 0 calc(var(--lit) * 12px) rgba(255, 95, 125, .95))
+    drop-shadow(0 0 calc(var(--lit) * 28px) rgba(255, 40, 80, .9))
+    drop-shadow(0 0 calc(var(--lit) * 60px) rgba(255, 20, 60, .6))
+    drop-shadow(calc(7px - var(--lit) * 4px) calc(11px - var(--lit) * 6px) 5px rgba(60, 0, 8, calc(.42 - var(--lit) * .3))); }
+.neon__tubes .tube path { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.tube--shadow, .tube--glow-wide, .tube--glow-mid, .tube--glass, .tube--core, .tube--spec { font: inherit; }
 
 /* power cord: a dark cable that runs strictly behind the headline and the sign */
 .hero__copy { z-index: 3; }
