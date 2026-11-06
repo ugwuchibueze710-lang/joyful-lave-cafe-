@@ -1,4 +1,4 @@
-import { categories, customizations, hours, ORDER_URL } from './data/menu.js';
+import { categories, customizations, hours } from './data/menu.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const money = (n) => `$${n.toFixed(2)}`;
@@ -15,12 +15,13 @@ export function renderMenu() {
     const low = Math.min(...it.sizes.map((s) => s[1]));
     const multi = it.sizes.length > 1;
     const alt = it.stock ? `${esc(it.name)} (sample photo)` : `${esc(it.name)}, photographed at the cafe`;
-    return `<article class="item${it.photo ? ' item--photo' : ''}">
+    return `<article class="item${it.photo ? ' item--photo' : ''}" data-item="${it.id}">
       ${it.photo ? `<div class="item__photo"><img loading="lazy" decoding="async" src="${it.photo}" alt="${alt}" width="600" height="450" /><span class="item__src${it.stock ? '' : ' is-real'}">${it.stock ? 'Sample photo' : 'From the cafe'}</span></div>` : ''}
       ${it.feature ? '<span class="badge">Drink special</span>' : it.popular ? '<span class="badge">Popular</span>' : ''}
       <div class="item__top"><h4>${esc(it.name)}</h4><span class="item__price">${multi ? '<small style="font:600 13px var(--body);color:var(--ink-soft)">from </small>' : ''}${money(low)}</span></div>
       <p>${esc(it.desc)}</p>
       ${multi ? `<div class="item__sizes">${it.sizes.map(([n, p]) => `<span>${esc(n)} · ${money(p)}</span>`).join('')}</div>` : ''}
+      <button class="item__add" type="button" aria-label="Add ${esc(it.name)} to your order">Add</button>
     </article>`;
   };
 
@@ -34,9 +35,10 @@ export function renderMenu() {
       count += items.length;
       html += `<section class="menu__cat" id="cat-${c.id}"><h3>${esc(c.name)}</h3><p>${esc(c.blurb)}</p><div class="menu__grid">${items.map(itemHTML).join('')}</div></section>`;
     });
-    panel.innerHTML = html || `<p class="menu__empty">Nothing matches “${esc(q)}”. Try another word — or <a href="${ORDER_URL}" target="_blank" rel="noopener">browse online ordering</a>.</p>`;
+    panel.innerHTML = html || `<p class="menu__empty">Nothing matches “${esc(q)}”. Try “latte”, “acai” or “wrap”.</p>`;
     panel.dataset.count = count;
     panel.querySelectorAll('.item').forEach((el, i) => { el.style.setProperty('--d', `${Math.min(i, 12) * 40}ms`); el.classList.add('is-in'); });
+    dispatchEvent(new CustomEvent('jjj:menu-drawn'));
   }
   // 3D tilt + light glare that follows the cursor
   if (matchMedia('(hover: hover) and (pointer: fine)').matches) {

@@ -1,17 +1,22 @@
+# Render Blueprint — Joy-Full Java + Juice website + online ordering (pay at pickup)
 services:
   - type: web
-    name: joyful-lave-cafe
-    runtime: static
+    name: joyful-java-juice
+    runtime: node
+    plan: free
     buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
-    headers:
-      - path: /assets/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /photos/*
-        name: Cache-Control
-        value: public, max-age=604800
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: TAX_RATE
+        value: "0.06"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: OWNER_PASSWORD   # you type this in Render (dashboard sign-in)
+        sync: false
+      - key: DATABASE_URL     # Supabase → Connect → Session pooler connection string
+        sync: false

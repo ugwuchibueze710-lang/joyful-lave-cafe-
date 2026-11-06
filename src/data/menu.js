@@ -1,12 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // REAL MENU — Joy-Full Java + Juice, 3811 KY 54, Owensboro KY
-// Source: the cafe's live ChowNow ordering menu (restaurant 59239), captured
-// Nov 2, 2026. Names, descriptions, sizes and prices are copied as published.
-// To update: edit this file only. Nothing here is invented.
+// Names, descriptions, sizes, prices and add-ons are the cafe's published menu
+// (captured Nov 2, 2026). To update the menu, edit this file only — the website,
+// the cart and the order server all read prices from here.
 // ─────────────────────────────────────────────────────────────────────────────
-
-export const ORDER_URL = 'https://order.chownow.com/order/38929/locations/59239';
-export const itemOrderUrl = () => ORDER_URL;
 
 export const categories = [
   {
@@ -129,7 +126,7 @@ export const categories = [
   },
 ];
 
-// Real customization options from the ChowNow menu (prices are add-ons).
+// Summary of add-ons shown under the menu (prices are add-ons).
 export const customizations = [
   { group: 'Milk', options: ['Non Fat Skim', '2%', 'Whole', ['Unsweetened Almond', 0.5], ['Oat', 0.5], ['Breve (Half & Half)', 0.5]] },
   { group: 'Add a Flavor (+$0.50)', options: ['White Chocolate', 'Raspberry', 'Mocha', 'Toffee Crunch', 'Caramel', 'Coconut', 'Vanilla', 'Peppermint', 'Salted Caramel', 'Hazelnut', 'Pumpkin Spice', 'French Vanilla', 'Sugar-Free Mocha', 'Sugar-Free White Chocolate'] },
@@ -139,7 +136,7 @@ export const customizations = [
   { group: 'Salads & Sammies', options: [['Add Chicken or Chicken Salad', 2], ['Grown In-House Sprouts', 1], ['Sliced Avocado', 1], ['Swap chips for Carrots & Hummus', 2], 'Ranch, Honey Mustard, Italian, Poppy Seed or Caesar dressing'] },
 ];
 
-// Hours as published on the cafe's ChowNow pickup schedule. Confirm with owner.
+// Pickup hours (America/Chicago). Confirm with owner.
 export const hours = [
   { day: 'Sunday', open: '12:00', close: '15:00' },
   { day: 'Monday', open: '06:00', close: '15:00' },
@@ -201,4 +198,121 @@ const STOCK = {
 for (const c of categories) for (const it of c.items) {
   if (REAL[it.name]) { it.photo = REAL[it.name]; it.stock = false; }
   else if (STOCK[it.name]) { it.photo = `/photos/menu/${STOCK[it.name]}.webp`; it.stock = true; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ORDERING: stable item ids + the real customization groups for each item.
+// Group types: 'one' = pick exactly one (required unless min: 0), 'many' = pick
+// any (up to max). Prices are add-ons in dollars. The server re-prices every
+// order from this file, so a customer can never change a price in their browser.
+// ─────────────────────────────────────────────────────────────────────────────
+export const slug = (s) => s.toLowerCase().replace(/&/g, 'and').replace(/["']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+const G = {
+  temp: { id: 'temp', name: 'Hot, iced or blended', type: 'one', options: [['Hot', 0], ['Iced', 0], ['Blended', 0]] },
+  tempHI: { id: 'temp', name: 'Hot or iced', type: 'one', options: [['Hot', 0], ['Iced', 0]] },
+  milk: { id: 'milk', name: 'Milk', type: 'one', min: 0, options: [['Non Fat Skim', 0], ['2%', 0], ['Whole', 0], ['Unsweetened Almond', 0.5], ['Oat', 0.5], ['Breve (Half & Half)', 0.5]] },
+  flavor: { id: 'flavor', name: 'Add a flavor', type: 'many', max: 3, options: ['White Chocolate Sauce', 'Raspberry', 'Mocha', 'Toffee Crunch', 'Caramel', 'Coconut', 'Vanilla', 'Peppermint', 'Salted Caramel', 'Hazelnut', 'Pumpkin Spice', 'French Vanilla', 'Sugar-Free Mocha', 'Sugar-Free White Chocolate'].map((n) => [n, 0.5]) },
+  coffeeExtras: { id: 'extras', name: 'Extras', type: 'many', options: [['Extra espresso shot', 1], ['Add cold foam', 1], ['Add whipped cream', 0.75], ['Make decaf', 0], ['Make sugar-free', 0]] },
+  chaiExtras: { id: 'extras', name: 'Extras', type: 'many', options: [['Add espresso shot (make it dirty)', 1], ['Add cold foam', 1], ['Add whipped cream', 0.75], ['Make sugar-free', 0]] },
+  noWhip: { id: 'whip', name: 'Whipped cream', type: 'many', options: [['No whipped cream', 0]] },
+  chillerExtras: { id: 'extras', name: 'Extras', type: 'many', options: [['Add espresso shot', 1], ['No whipped cream', 0]] },
+  whiteChocFlavor: { id: 'flavor', name: 'Add flavor', type: 'many', options: [['Raspberry', 0.5], ['Blueberry', 0.5]] },
+  boosters: { id: 'boost', name: 'Boosters', type: 'many', options: [['Vanilla protein', 1], ['Chocolate protein', 1], ['Hemp protein', 1], ['Energize booster', 1], ['Immune support booster', 1], ['Almond butter', 0.5], ['Peanut butter', 0.5], ['Honey', 0.5], ['Agave syrup', 0.5]] },
+  makeBowl: { id: 'bowl', name: 'Make it a bowl', type: 'many', options: [['Make it a bowl (granola, strawberry, blueberry, banana & agave)', 2]] },
+  acaiSwap: { id: 'swap', name: 'Swap', type: 'many', options: [['Peanut butter instead of almond butter', 0]] },
+  tropicalMods: { id: 'mods', name: 'Leave off', type: 'many', options: [['No granola', 0], ['No shredded coconut', 0], ['No banana', 0], ['No mango', 0], ['No strawberry', 0], ['No agave', 0], ['No chia seeds', 0], ['Honey instead of agave', 0]] },
+  tropicalAdd: { id: 'add', name: 'Add', type: 'many', options: [['Vanilla protein', 1], ['Nutella', 0.5], ['Almond butter', 0.5], ['Peanut butter', 0.5]] },
+  georgeProtein: { id: 'protein', name: 'Protein', type: 'many', options: [['Vanilla protein instead of chocolate', 0]] },
+  pbSwap: { id: 'swap', name: 'Nut butter', type: 'one', options: [['Peanut butter', 0], ['Almond butter', 0]] },
+  riseBread: { id: 'bread', name: 'Bread', type: 'one', options: [['Flaky croissant', 0], ['Toasted whole wheat', 0], ['Maple waffle', 1]] },
+  riseCheese: { id: 'cheese', name: 'Cheese', type: 'one', options: [['White American', 0], ['Cheddar', 0], ['Pepper Jack', 0], ['No cheese', 0]] },
+  riseProtein: { id: 'protein', name: 'Meat', type: 'one', options: [['Sausage', 0], ['Bacon', 0], ['Ham', 0], ['Double egg (no meat)', 0]] },
+  riseExtra: { id: 'extra', name: 'Extras', type: 'many', options: [['Extra bacon', 1.5], ['Extra sausage', 1.5], ['Avocado, leafy greens, tomato & spicy mayo', 1]] },
+  jalapenos: { id: 'jal', name: 'Kick it up', type: 'many', options: [['Candied jalapeños', 1]] },
+  avoBase: { id: 'base', name: 'Base', type: 'one', options: [['Whole wheat', 0], ['Toasted flatbread', 2]] },
+  avoTop: { id: 'top', name: 'Toppings', type: 'many', options: [['No tomato', 0], ['Add bacon', 1], ['Add egg', 1]] },
+  nuttySpread: { id: 'spread', name: 'Spread', type: 'one', options: [['Almond butter', 0], ['Peanut butter', 0]] },
+  nuttySweet: { id: 'sweet', name: 'Drizzle', type: 'one', options: [['Honey', 0], ['Agave', 0]] },
+  nuttyAdd: { id: 'add', name: 'Add', type: 'many', options: [['Strawberry, blueberry & granola', 1]] },
+  burritoStyle: { id: 'style', name: 'Style', type: 'one', options: [['Wrapped in a tortilla', 0], ['Make it a bowl (no tortilla)', 0]] },
+  burritoSauce: { id: 'sauce', name: 'On the side', type: 'one', options: [['Salsa', 0], ['Chipotle ranch', 0]] },
+  burritoAdd: { id: 'add', name: 'Add', type: 'many', options: [['Avocado', 1], ['House-grown sprouts', 1]] },
+  warmed: { id: 'warm', name: 'Warmed?', type: 'one', options: [['Warmed', 0], ['Not warmed', 0]] },
+  gobblerMeat: { id: 'meat', name: 'Meat', type: 'one', options: [['Turkey', 0], ['Ham', 0]] },
+  gobblerCheese: { id: 'cheese', name: 'Cheese', type: 'one', options: [['Cheddar', 0], ['Pepper Jack', 0]] },
+  sammyBread: { id: 'bread', name: 'Bread', type: 'one', options: [['Toasted sourdough', 0], ['Toasted whole wheat', 0], ['Toasted croissant', 0], ['Wrap', 0]] },
+  sammyTop: { id: 'top', name: 'Toppings', type: 'many', options: [['No tomato', 0], ['No onion', 0], ['No greens', 0], ['Add spicy mayo', 0], ['Add mayo', 0], ['Add avocado', 1], ['Add sprouts', 1]] },
+  chipsSwap: { id: 'side', name: 'Side', type: 'many', options: [['Carrots & hummus instead of chips', 2]] },
+  flatWrap: { id: 'style', name: 'Style', type: 'one', options: [['Flatbread', 0], ['Make it a wrap (with chips)', 0]] },
+  dressing: { id: 'dressing', name: 'Dressing', type: 'one', options: [['Ranch', 0], ['Honey mustard', 0], ['Italian', 0], ['Poppy seed', 0], ['Caesar', 0], ['No dressing', 0]] },
+  saladWrap: { id: 'wrap', name: 'Make it a wrap', type: 'many', options: [['Make it a wrap with a bag of chips', 0]] },
+  saladAdd: { id: 'add', name: 'Add', type: 'many', options: [['Chicken', 2], ['Chicken salad', 2], ['Grown in-house sprouts', 1], ['Sliced avocado', 1]] },
+  caesarSub: { id: 'sub', name: 'Swap', type: 'many', options: [['Chicken salad instead of grilled chicken', 0]] },
+  decaf: { id: 'decaf', name: 'Decaf', type: 'many', options: [['Make decaf', 0]] },
+  espressoAdd: { id: 'extras', name: 'Extras', type: 'many', options: [['Extra shot', 1]] },
+  hotChoc: { id: 'extras', name: 'Extras', type: 'many', options: [['No whipped cream', 0], ['Add a flavor shot', 0.5]] },
+};
+
+const coffee = [G.milk, G.flavor, G.coffeeExtras];
+const OPTIONS = {
+  'Americano': [G.flavor, G.coffeeExtras],
+  'Cappuccino': coffee,
+  'Chai Latte': [G.milk, G.flavor, G.chaiExtras],
+  'Nitro Cold Brew': [G.milk, G.flavor, G.coffeeExtras],
+  'Drip Coffee': [G.milk, G.flavor, G.decaf],
+  'Espresso': [G.espressoAdd, G.decaf],
+  'Hot Chocolate': [G.milk, G.hotChoc],
+  'Latte': coffee,
+  'Banana Bread Latte': [G.temp, ...coffee],
+  'Wedding Cake Latte': [G.temp, ...coffee],
+  'Caramel Apple Butter Chai': [G.temp, G.milk, G.chaiExtras],
+  'Pumpkin Caramel Cookie Butter Latte': [G.tempHI, ...coffee],
+  'Pumpkin Caramel Cookie Butter Iced Nitro Cold Brew': [G.flavor, G.coffeeExtras],
+  'Banana Peanut Butter Fudge Latte': [G.temp, ...coffee],
+  'German Chocolate Cake Latte': [G.tempHI, ...coffee],
+  'Maple Nut Goodie Latte': [G.tempHI, ...coffee],
+  'Mellow Matcha Iced Latte': [G.milk, G.coffeeExtras],
+  'Happy Acai Bowl': [G.acaiSwap, G.boosters],
+  'Peanut Butter Passion Acai Bowl': [G.boosters],
+  'Tropical Colada Blue Spirulina Bowl': [G.tropicalMods, G.tropicalAdd],
+  'Berry Kind Smoothie': [G.makeBowl, G.boosters],
+  'Gentle George Smoothie': [G.georgeProtein, G.makeBowl, G.boosters],
+  'Green Goodness Smoothie': [G.makeBowl, G.boosters],
+  'Groovy Love Smoothie': [G.makeBowl, G.boosters],
+  'PB & Joy Smoothie': [G.pbSwap, G.makeBowl, G.boosters],
+  'Peacefull Sunshine': [G.makeBowl, G.boosters],
+  'The Ultimate': [G.jalapenos],
+  'Avocado Toast': [G.avoBase, G.avoTop],
+  'Best Burrito of the South': [G.burritoStyle, G.burritoSauce, G.burritoAdd],
+  "Lil' Bit Nutty": [G.nuttySpread, G.nuttySweet, G.nuttyAdd],
+  'Rise & Shine / Maple Waffle Sammy': [G.riseBread, G.riseCheese, G.riseProtein, G.riseExtra],
+  'Cinnamon Roll': [G.warmed],
+  'Chicken Caesar Salad': [G.saladWrap, G.caesarSub, G.saladAdd],
+  "Chef's Choice Salad": [G.dressing, G.saladAdd],
+  'Summer Berry Splender Salad': [G.saladAdd],
+  'The Gobbler Sammy': [G.gobblerMeat, G.gobblerCheese, G.sammyTop, G.chipsSwap],
+  'Chicken Salad Sammy': [G.sammyBread, G.sammyTop, G.chipsSwap],
+  'Virtuous Veggie Wrap': [G.sammyTop, G.chipsSwap],
+  'Chicken Bacon Ranch Flatbread': [G.flatWrap, G.sammyTop, G.chipsSwap],
+  'Pesto Chicken Flatbread': [G.flatWrap, G.sammyTop, G.chipsSwap],
+  'Vanilla Chai Chiller': [G.milk, G.chillerExtras],
+  'Dulce de Leche Chiller': [G.milk, G.chillerExtras],
+  '"Almond Joy" Chiller': [G.milk, G.chillerExtras],
+  'Cotton Candy Chiller': [G.milk, G.chillerExtras],
+  'Kona Mocha Chiller': [G.milk, G.chillerExtras],
+  '"Nutella" Chiller': [G.milk, G.chillerExtras],
+  'White Chocolate Chiller': [G.milk, G.whiteChocFlavor, G.chillerExtras],
+};
+
+// Build the size group + attach ids/options to every item.
+export const itemsById = {};
+for (const c of categories) for (const it of c.items) {
+  it.id = slug(it.name);
+  it.category = c.id;
+  const groups = [];
+  if (it.sizes.length > 1) groups.push({ id: 'size', name: 'Size', type: 'one', options: it.sizes.map(([n, p]) => [n, p]), isSize: true });
+  for (const g of OPTIONS[it.name] ?? []) groups.push(g);
+  it.groups = groups;
+  itemsById[it.id] = it;
 }

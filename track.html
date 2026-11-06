@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#ec3b3a" />
+  <title>JOYTRACK · Your order · Joy-Full Java + Juice</title>
+  <link rel="icon" href="/photos/joyfull-logo.webp" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body class="jt">
+  <header class="jt-top">
+    <a class="jt-brand" href="/"><img src="/photos/joyfull-logo.webp" alt="" width="40" height="40" /><span>Joy-Full<br /><b>Java + Juice</b></span></a>
+    <span class="jt-live" id="live"><i></i><b>Connecting…</b></span>
+  </header>
+
+  <main class="jt-main" id="app" aria-live="polite">
+    <section class="jt-loading" id="loading"><div class="jt-spin"></div><p>Finding your order…</p></section>
+  </main>
+
+  <footer class="jt-foot"><span>JOYTRACK</span> · live order tracking by Joy-Full Java + Juice</footer>
+  <script type="module" src="/src/track/track.js"></script>
+</body>
+</html>

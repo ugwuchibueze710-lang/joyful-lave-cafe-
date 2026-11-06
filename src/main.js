@@ -2,6 +2,7 @@ import './styles.css';
 import { gsap } from 'gsap';
 import Lenis from 'lenis';
 import { renderMenu, renderHours } from './ui.js';
+import { initOrdering } from './order/order.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -37,6 +38,7 @@ if (lenis) {
 
 $$('a[href^="#"]').forEach((a) => a.addEventListener('click', (e) => {
   const id = a.getAttribute('href'); if (id.length < 2) return;
+  if (a.hasAttribute('data-order')) { closeDrawer(); return; } // handled by ordering
   const el = $(id); if (!el) return;
   e.preventDefault(); closeDrawer();
   if (a.dataset.jump) menu.select(a.dataset.jump);
@@ -63,6 +65,11 @@ burger.addEventListener('click', () => {
   if (open) gsap.from($$('a', drawer), { y: 30, opacity: 0, stagger: 0.05, duration: 0.6, ease: 'expo.out' });
 });
 addEventListener('keydown', (e) => e.key === 'Escape' && closeDrawer());
+/* ── ordering hooks ───────────────────────────────── */
+initOrdering();
+addEventListener('jjj:lock', () => { closeDrawer(); lenis?.stop(); document.documentElement.classList.add('o-locked'); });
+addEventListener('jjj:unlock', () => { lenis?.start(); document.documentElement.classList.remove('o-locked'); });
+addEventListener('jjj:goto', (e) => { const el = $(e.detail); if (!el) return; lenis ? lenis.scrollTo(el, { offset: -20, duration: 1.4 }) : el.scrollIntoView({ behavior: 'smooth' }); });
 
 /* ── photo reel drifts sideways as you scroll ─────── */
 const reelEl = $('#reel');
