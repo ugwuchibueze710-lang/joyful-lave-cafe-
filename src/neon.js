@@ -1,42 +1,68 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// The JOY neon sign — modelled on the white outline "JOY" sign on the cafe's
-// own counter. Glass tubes follow the letter outlines, mounted on a clear
-// acrylic backplate with chrome standoffs, wired by a cord to a wall rocker
-// switch. Always on when the page loads; the switch turns it off and on.
+// The JOY marquee sign — modelled on the red "JOY" marquee letters on the
+// cafe's own counter: deep-red channel letters with a row of white bulbs
+// running down each stroke. Wired by a cord (running behind everything) to a
+// wall rocker switch. Always on when the page loads; the switch turns it off/on.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}, ns = SVGNS) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
 
+// centre-lines of the three letters (units: letter cap height = 200)
+const LETTERS = [
+  { x: 0, d: ['M 32 16 H 132', 'M 106 16 V 138 C 106 182 84 202 58 202 C 31 202 14 186 14 158'] },
+  { x: 150, d: ['M 88 16 C 130 16 162 56 162 109 C 162 163 130 202 88 202 C 46 202 14 163 14 109 C 14 56 46 16 88 16 Z'] },
+  { x: 334, d: ['M 6 16 H 64', 'M 112 16 H 170', 'M 34 16 L 88 112 L 142 16', 'M 88 112 V 202', 'M 56 202 H 120'] },
+];
+const STROKE = 34, BULB_GAP = 21, DEPTH = 9;
+
 export function mountNeon({ sign, switchEl, hero }) {
   const svg = sign.querySelector('.neon__tubes');
-  const text = 'JOY';
-  const layers = ['shadow', 'glow-wide', 'glow-mid', 'glass', 'core', 'spec'];
-  const texts = layers.map((cls) => {
-    const t = el('text', { class: `tube tube--${cls}`, x: '50%', y: '50%', 'text-anchor': 'middle', 'dominant-baseline': 'central' });
-    t.textContent = text;
-    svg.appendChild(t);
-    return t;
-  });
-
   const plate = sign.querySelector('.neon__rig');
+  svg.setAttribute('viewBox', `-24 -12 ${520 + 24 + DEPTH + 18} ${232 + DEPTH + 12}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  const defs = el('defs');
+  defs.innerHTML = `
+    <linearGradient id="mqFace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4b43"/><stop offset=".45" stop-color="#ec2a2d"/><stop offset="1" stop-color="#c5161d"/></linearGradient>
+    <radialGradient id="mqBulb" cx=".38" cy=".34" r=".7"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#fff8ef"/><stop offset=".8" stop-color="#ffe7d3"/><stop offset="1" stop-color="#f3c9b2"/></radialGradient>
+    <radialGradient id="mqBulbOff" cx=".38" cy=".34" r=".7"><stop offset="0" stop-color="#f4eeea"/><stop offset=".6" stop-color="#cfc4bf"/><stop offset="1" stop-color="#9d8f8a"/></radialGradient>
+    <filter id="mqGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="mqHalo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>`;
+  const shadow = el('g', { class: 'mq-shadow' }), sides = el('g', { class: 'mq-side' }), faces = el('g', { class: 'mq-face' }),
+    rims = el('g', { class: 'mq-rim' }), inlay = el('g', { class: 'mq-inlay' }), halo = el('g', { class: 'mq-halo' }), sockets = el('g', { class: 'mq-socket' }),
+    glow = el('g', { class: 'mq-glow' }), bulbs = el('g', { class: 'mq-bulb' }), shine = el('g', { class: 'mq-shine' });
+  svg.append(defs, shadow, sides, faces, rims, inlay, halo, sockets, glow, bulbs, shine);
+  for (const L of LETTERS) {
+    for (const d of L.d) {
+      const tr = `translate(${L.x} 0)`;
+      shadow.appendChild(el('path', { d, transform: `translate(${L.x + 16} 22)` }));
+      for (let k = DEPTH; k > 0; k -= 1.5) sides.appendChild(el('path', { d, transform: `translate(${L.x + k * 0.7} ${k})` }));
+      faces.appendChild(el('path', { d, transform: tr }));
+      rims.appendChild(el('path', { d, transform: tr }));
+      inlay.appendChild(el('path', { d, transform: tr }));
+      // bulbs evenly along the stroke
+      const probe = el('path', { d }); svg.appendChild(probe);
+      const len = probe.getTotalLength();
+      const n = Math.max(2, Math.round(len / BULB_GAP));
+      const closed = /Z\s*$/.test(d);
+      for (let i = 0; i < (closed ? n : n + 1); i++) {
+        const pt = probe.getPointAtLength(Math.min(len, (len / n) * i));
+        const cx = pt.x + L.x, cy = pt.y;
+        if ([...bulbs.children].some((b) => Math.hypot(b.cx.baseVal.value - cx, b.cy.baseVal.value - cy) < BULB_GAP * 0.55)) continue;
+        sockets.appendChild(el('circle', { cx, cy, r: 7.2 }));
+        halo.appendChild(el('circle', { cx, cy, r: 13 }));
+        glow.appendChild(el('circle', { cx, cy, r: 7.5 }));
+        bulbs.appendChild(el('circle', { cx, cy, r: 5.2 }));
+        shine.appendChild(el('circle', { cx: cx - 1.9, cy: cy - 2.1, r: 1.7 }));
+      }
+      probe.remove();
+    }
+  }
 
   function fit() {
-    // tight glyph box from canvas metrics (SVG getBBox includes the font's empty ascent/descent)
-    const c = document.createElement('canvas').getContext('2d');
-    const fam = getComputedStyle(document.documentElement).getPropertyValue('--display') || 'Archivo, sans-serif';
-    c.font = `900 200px ${fam}`;
-    if ('letterSpacing' in c) c.letterSpacing = '10px';
-    const m = c.measureText(text);
-    const left = m.actualBoundingBoxLeft, right = m.actualBoundingBoxRight;
-    const asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent;
-    texts.forEach((t) => { t.setAttribute('x', 0); t.setAttribute('y', 0); t.setAttribute('text-anchor', 'start'); t.removeAttribute('dominant-baseline'); });
-    const pad = 22;
-    const x0 = -left - pad, y0 = -asc - pad, vw = left + right + pad * 2, vh = asc + desc + pad * 2;
-    svg.setAttribute('viewBox', `${x0} ${y0} ${vw} ${vh}`);
-    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    const vb = svg.viewBox.baseVal;
     const hpx = sign.getBoundingClientRect().height || 100;
-    const wpx = (hpx * vw) / vh;
+    const wpx = (hpx * vb.width) / vb.height;
     svg.style.width = `${wpx}px`; plate.style.width = `${wpx}px`; sign.style.width = `${wpx}px`;
     drawCord();
   }
@@ -54,10 +80,10 @@ export function mountNeon({ sign, switchEl, hero }) {
 
   function drawCord() {
     const h = hero.getBoundingClientRect();
-    const a = sign.querySelector('.neon__plate').getBoundingClientRect();
+    const a = svg.getBoundingClientRect();
     const b = switchEl.getBoundingClientRect();
     if (!a.width || !b.width) return;
-    const x1 = a.right - h.left - a.width * 0.08, y1 = a.bottom - h.top - 4;
+    const x1 = a.left - h.left + a.width * 0.6, y1 = a.top - h.top + a.height * 0.62; // hidden behind the O/Y
     const x2 = b.left - h.left + 6, y2 = b.top - h.top + b.height * 0.5;
     const sag = Math.max(60, Math.abs(y2 - y1) * 0.45 + 40);
     const d = `M ${x1} ${y1} C ${x1 + 10} ${y1 + sag}, ${x2 - 90} ${y2 + sag * 0.55}, ${x2} ${y2}`;
@@ -65,7 +91,7 @@ export function mountNeon({ sign, switchEl, hero }) {
     cord.setAttribute('viewBox', `0 0 ${h.width} ${h.height}`);
     cordPath.setAttribute('d', d); cordShine.setAttribute('d', d); cordPulse.setAttribute('d', d);
     cordShadow.setAttribute('d', d); cordShadow.setAttribute('transform', 'translate(5 9)');
-    clipA.setAttribute('cx', x1); clipA.setAttribute('cy', y1);
+    clipA.setAttribute('cx', -99); clipA.setAttribute('cy', -99);
     clipB.setAttribute('cx', x2); clipB.setAttribute('cy', y2);
   }
 

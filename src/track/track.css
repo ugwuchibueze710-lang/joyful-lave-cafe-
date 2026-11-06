@@ -2,10 +2,18 @@
   --display: 'Archivo', 'Arial Black', system-ui, sans-serif; --body: 'Geist', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace; --ease: cubic-bezier(.22,1,.36,1); }
 * { box-sizing: border-box; }
 body.jt { margin: 0; min-height: 100dvh; font-family: var(--body); color: var(--ink); background: var(--cream); -webkit-font-smoothing: antialiased; }
-body.jt::before { content: ''; position: fixed; inset: 0 0 auto; height: 62vh; z-index: -1; background: radial-gradient(120% 90% at 50% 0%, #f25a49 0%, var(--red) 45%, var(--red-deep) 100%); border-radius: 0 0 48px 48px; transition: background .8s; }
-body[data-status="ready"]::before { background: radial-gradient(120% 90% at 50% 0%, #a24b99 0%, var(--purple) 50%, var(--purple-deep) 100%); }
-body[data-status="completed"]::before { background: radial-gradient(120% 90% at 50% 0%, #3d3a39, #1b1b1b); }
-body[data-status="cancelled"]::before { background: linear-gradient(#6b6461, #4a4442); }
+/* the cafe counter photo (owner + the real JOY sign), tinted so status text stays readable */
+body.jt::before { content: ''; position: fixed; inset: 0 0 auto; height: 66vh; z-index: -2; border-radius: 0 0 48px 48px;
+  background: url(/photos/joytrack-bg.webp) 62% 40% / cover no-repeat, var(--red-deep);
+  animation: jtkb 26s ease-in-out infinite alternate; transform-origin: 60% 40%; }
+@media (max-width: 760px) { body.jt::before { background-image: url(/photos/joytrack-bg-mobile.webp); background-position: 50% 30%; } }
+body.jt::after { content: ''; position: fixed; inset: 0 0 auto; height: 66vh; z-index: -1; border-radius: 0 0 48px 48px; transition: background .8s;
+  background: linear-gradient(90deg, rgba(150,10,20,.9) 0%, rgba(170,16,24,.72) 38%, rgba(120,8,16,.28) 70%, rgba(90,0,10,.18) 100%), linear-gradient(180deg, rgba(0,0,0,.25), transparent 30%, rgba(80,0,10,.45)); }
+@keyframes jtkb { from { transform: scale(1); } to { transform: scale(1.06); } }
+body[data-status="ready"]::after { background: linear-gradient(90deg, rgba(94,36,87,.92) 0%, rgba(132,58,124,.72) 40%, rgba(94,36,87,.3) 72%, rgba(60,10,55,.2) 100%), linear-gradient(180deg, rgba(0,0,0,.25), transparent 30%, rgba(50,0,40,.45)); }
+body[data-status="completed"]::after { background: linear-gradient(90deg, rgba(27,27,27,.92), rgba(27,27,27,.6) 45%, rgba(27,27,27,.35)); }
+body[data-status="cancelled"]::after { background: linear-gradient(rgba(74,68,66,.92), rgba(74,68,66,.8)); }
+.jt-hero { text-shadow: 0 2px 18px rgba(60,0,8,.45); }
 
 .jt-top { display: flex; justify-content: space-between; align-items: center; padding: 16px clamp(16px, 4vw, 40px); color: #fff; }
 .jt-brand { display: flex; gap: 10px; align-items: center; color: #fff; text-decoration: none; font: 600 13px/1.1 var(--body); }
@@ -121,4 +129,4 @@ body.is-celebrate .jt-cupwrap { animation: jtpop 1s var(--ease); }
   .jt-sub { margin: 0 auto; }
   .jt-steps { grid-template-columns: 1fr 1fr; gap: 14px; }
 }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { body.jt::before { animation: none; } *, *::before, *::after { animation: none !important; transition: none !important; } }
