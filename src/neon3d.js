@@ -9,9 +9,8 @@
 // so the gas-strike flicker and the switch drive the 3D glass too.
 import {
   WebGLRenderer, Scene, PerspectiveCamera, Group, Vector3, CatmullRomCurve3, TubeGeometry, CylinderGeometry, SphereGeometry,
-  Mesh, MeshPhysicalMaterial, MeshBasicMaterial, MeshStandardMaterial, PMREMGenerator, Color, SRGBColorSpace, ACESFilmicToneMapping, PointLight,
+  Mesh, BoxGeometry, MeshPhysicalMaterial, MeshBasicMaterial, MeshStandardMaterial, PMREMGenerator, Color, SRGBColorSpace, ACESFilmicToneMapping, PointLight,
 } from 'three';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 const R_TUBE = 6.6, R_CORE = 2.7, RETURN = 34;
 
@@ -46,6 +45,11 @@ export function createNeon3D({ holder, sign, tubes, bounds }) {
   canvas.className = 'neon__gl';
   canvas.setAttribute('aria-hidden', 'true');
   holder.after(canvas);
+  // the light the tubes throw onto the acrylic + wall: a blurred copy of each frame
+  const cast = document.createElement('canvas');
+  cast.className = 'neon__cast'; cast.setAttribute('aria-hidden', 'true');
+  holder.after(cast);
+  const cctx = cast.getContext('2d');
 
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, premultipliedAlpha: true, powerPreference: 'high-performance' });
   renderer.setClearColor(0x000000, 0);
@@ -54,7 +58,17 @@ export function createNeon3D({ holder, sign, tubes, bounds }) {
   renderer.toneMappingExposure = 1.05;
   const scene = new Scene();
   const pmrem = new PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  // photo-studio environment: dark room, long softbox strips (the crisp highlight
+  // streaks you see running along real glass tubes) and the red cafe wall bouncing back
+  const studio = new Scene(); studio.background = new Color(0x120709);
+  const panel = (w, h, d, rgb, pos, rot = [0, 0, 0]) => { const m = new Mesh(new BoxGeometry(w, h, d), new MeshBasicMaterial({ color: new Color(...rgb) })); m.position.set(...pos); m.rotation.set(...rot); studio.add(m); };
+  panel(14, 0.5, 3, [9, 8.6, 8.2], [0, 5.5, 2]);          // long overhead strip
+  panel(0.5, 7, 2, [4.5, 4.3, 4.1], [-7, 1, 3]);         // left strip
+  panel(0.5, 7, 2, [2.6, 2.5, 2.4], [7, 1, 3]);          // right strip (dimmer)
+  panel(5, 3, 0.3, [3.2, 3.1, 3], [2, 3, 6], [-0.5, 0, 0]); // key softbox, front-top
+  panel(30, 30, 0.5, [0.55, 0.06, 0.07], [0, 0, -8]);     // red wall behind
+  panel(30, 0.5, 30, [0.35, 0.05, 0.06], [0, -6, 0]);     // red floor bounce
+  scene.environment = pmrem.fromScene(studio, 0.015).texture;
 
   const camera = new PerspectiveCamera(16, bounds.w / bounds.h, 10, 6000);
   const root = new Group(); scene.add(root);
@@ -62,8 +76,9 @@ export function createNeon3D({ holder, sign, tubes, bounds }) {
   const toV = (p, z = 0) => new Vector3(p.x - cx, -(p.y - cy), z);
 
   // materials
-  const glass = new MeshPhysicalMaterial({ color: 0xf6efec, roughness: 0.32, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.04,
-    sheen: 0.4, sheenColor: new Color(0xffe3e6), emissive: new Color(0xff8fa0), emissiveIntensity: 0, envMapIntensity: 1.25, transparent: true, opacity: 0.92 });
+  // phosphor-coated glass: the coating is a soft milky white under a glossy glass skin
+  const glass = new MeshPhysicalMaterial({ color: 0xece4e1, roughness: 0.42, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02,
+    ior: 1.5, specularIntensity: 1, sheen: 0.25, sheenColor: new Color(0xfff0f0), emissive: new Color(0xff8fa0), emissiveIntensity: 0, envMapIntensity: 1.6, transparent: true, opacity: 0.94 });
   const core = new MeshBasicMaterial({ color: new Color(1, 1, 1), toneMapped: false, transparent: true, opacity: 1 });
   const paint = new MeshStandardMaterial({ color: 0x141214, roughness: 0.55, metalness: 0.1, envMapIntensity: 0.8 });
   const cap = new MeshStandardMaterial({ color: 0x0d0d0f, roughness: 0.35, metalness: 0.2, envMapIntensity: 1 });
@@ -108,6 +123,8 @@ export function createNeon3D({ holder, sign, tubes, bounds }) {
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     renderer.setSize(wpx, hpx, false);
     canvas.style.width = `${wpx}px`; canvas.style.height = `${hpx}px`;
+    cast.width = Math.round(wpx / 2); cast.height = Math.round(hpx / 2);
+    cast.style.width = `${wpx}px`; cast.style.height = `${hpx}px`;
     camera.aspect = wpx / hpx; camera.updateProjectionMatrix();
     draw(true);
   }
@@ -126,6 +143,7 @@ export function createNeon3D({ holder, sign, tubes, bounds }) {
     core.opacity = 0.25 + lit * 0.75;
     warm.intensity = lit * 2.2;
     renderer.render(scene, camera);
+    if (cast.width) { cctx.clearRect(0, 0, cast.width, cast.height); if (lit > 0.02) cctx.drawImage(canvas, 0, 0, cast.width, cast.height); }
   }
 
   // render loop only while something is changing (strike flicker, tilt), and only on screen

@@ -415,25 +415,37 @@ body.on-red .nav:not(.is-solid) .btn--red { --bg: #fff; color: var(--red); }
 
 body.gl-on .hero { background: none; }
 
-/* ── JOY neon: 3D glass tubes (neon3d.js) on the acrylic backer ───────── */
-.neon { height: 1.5em; vertical-align: -0.26em; }
-.neon.is-3d .neon__tubes { visibility: hidden; }
-.neon__gl { position: absolute; left: 0; top: 0; display: block; pointer-events: none; transform: translateZ(16px);
-  /* the gas glow: tight white halo → pink → wide red bloom, scaled by --lit; contact shadow on the plate */
-  filter:
-    drop-shadow(0 0 calc(var(--lit) * 1.5px) rgba(255, 255, 255, 1))
-    drop-shadow(0 0 calc(var(--lit) * 5px) rgba(255, 190, 200, 1))
-    drop-shadow(0 0 calc(var(--lit) * 12px) rgba(255, 95, 125, .95))
-    drop-shadow(0 0 calc(var(--lit) * 28px) rgba(255, 40, 80, .9))
-    drop-shadow(0 0 calc(var(--lit) * 60px) rgba(255, 20, 60, .6))
-    drop-shadow(calc(7px - var(--lit) * 4px) calc(11px - var(--lit) * 6px) 5px rgba(60, 0, 8, calc(.42 - var(--lit) * .3))); }
-.neon__tubes .tube path { fill: none; stroke-linejoin: round; stroke-linecap: round; }
-.tube--shadow, .tube--glow-wide, .tube--glow-mid, .tube--glass, .tube--core, .tube--spec { font: inherit; }
+/* ── JOY neon: the real sign (lit + unlit photos cut out of their wall) ─── */
+.neon { height: 1.85em; vertical-align: -0.5em; margin: 0 .06em; }
+.neon.is-photo .neon__plate, .neon.is-photo .neon__tubes, .neon.is-photo .neon__spill, .neon.is-photo .neon__shadow { display: none; }
+.neon__photo { position: absolute; display: block; pointer-events: none; transform: translateZ(0); }
+.neon__photo img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
+.neon__off { filter: drop-shadow(6px 10px 7px rgba(50, 0, 6, .32)); }
+.neon__on { opacity: 1; will-change: opacity; filter: saturate(1.08) brightness(1.04); }
+/* each tube is its own layer so the letters can strike independently */
+.neon__on--j { -webkit-mask-image: linear-gradient(to right, #000 0 31%, transparent 33.5%); mask-image: linear-gradient(to right, #000 0 31%, transparent 33.5%); }
+.neon__on--o { -webkit-mask-image: linear-gradient(to right, transparent 31%, #000 33.5% 64%, transparent 66.5%); mask-image: linear-gradient(to right, transparent 31%, #000 33.5% 64%, transparent 66.5%); }
+.neon__on--y { -webkit-mask-image: linear-gradient(to right, transparent 64%, #000 66.5%); mask-image: linear-gradient(to right, transparent 64%, #000 66.5%); }
+@media (max-width: 700px) { .neon { height: 1.7em; vertical-align: -0.45em; } }
+
+/* the room: the sign lights the wall around it; switched off, that light is gone */
+.neon-room { position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+.neon-room i { position: absolute; inset: 0; transition: opacity .5s ease-out; }
+.neon-room__glow { mix-blend-mode: screen; opacity: 0;
+  background: radial-gradient(calc(var(--nw, 300px) * 1.1) calc(var(--nw, 300px) * .7) at var(--nx, 20%) var(--ny, 40%), rgba(255, 215, 222, .34), rgba(255, 120, 140, .16) 40%, rgba(255, 60, 80, .05) 70%, transparent 100%); }
+.neon-room__dark { opacity: 0;
+  background: radial-gradient(calc(var(--nw, 300px) * 3.4) calc(var(--nw, 300px) * 2.4) at var(--nx, 20%) var(--ny, 40%), rgba(25, 0, 5, .30), rgba(25, 0, 5, .2) 45%, rgba(25, 0, 5, .12) 100%); }
+.hero[data-neon="on"] .neon-room__glow { opacity: 1; transition-duration: .15s; }
+.hero[data-neon="off"] .neon-room__dark { opacity: 1; transition-duration: 1.1s; }
+.hero[data-neon="off"] .neon__plate { filter: brightness(.82); }
+.neon__plate { transition: filter .8s; }
 
 /* power cord: a dark cable that runs strictly behind the headline and the sign */
 .hero__copy { z-index: 3; }
+.neon-cord .cord-pulse { display: none; }
 .neon-cord { z-index: 0; }
 .neon-cord .cord { stroke: #24171a; stroke-width: 5; }
 .neon-cord .cord-shine { stroke: rgba(255,255,255,.22); }
 .neon-cord .cord-shadow { stroke: rgba(40,0,6,.45); }
 .neon-cord .cord-pulse { stroke: rgba(255, 220, 200, .55); stroke-width: 3; }
+.neon.is-photo .neon__rig { transform: rotateY(var(--ry, -4deg)) rotateX(var(--rx, 2deg)); }

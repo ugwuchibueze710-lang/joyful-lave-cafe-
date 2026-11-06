@@ -1,6 +1,5 @@
-// Owner dashboard — live online orders (pay at pickup), live carts, payments, settings.
-// Prep status and payment status are separate on purpose:
-//   COMPLETED = handed to the customer · PAID = money collected at the counter.
+// Owner dashboard — live online orders (customers pay at the counter when they pick up),
+// live carts, order history, sold-out switches and settings.
 import './admin.css';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -23,7 +22,7 @@ async function api(path, body) {
 }
 
 /* ── state ────────────────────────────────────────────────────────────── */
-const S = { me: null, orders: new Map(), carts: new Map(), settings: {}, payMethods: {}, staff: [], menu: [], storage: '', view: 'live', filter: 'today', open: null, seen: new Set() };
+const S = { me: null, orders: new Map(), carts: new Map(), settings: {}, staff: [], menu: [], storage: '', view: 'live', filter: 'today', open: null, seen: new Set() };
 try { JSON.parse(localStorage.getItem('jjj-seen') || '[]').forEach((id) => S.seen.add(id)); } catch {}
 const saveSeen = () => { try { localStorage.setItem('jjj-seen', JSON.stringify([...S.seen].slice(-800))); } catch {} };
 
@@ -71,7 +70,7 @@ let es;
 async function boot() {
   let d;
   try { d = await api('/api/admin/bootstrap'); } catch { return; }
-  S.me = d.me; S.settings = d.settings; S.payMethods = d.payMethods; S.staff = d.staff; S.menu = d.menu; S.storage = d.storage; S.pickup = d.pickup;
+  S.me = d.me; S.settings = d.settings; S.staff = d.staff; S.menu = d.menu; S.storage = d.storage; S.pickup = d.pickup;
   S.orders = new Map(d.orders.map((o) => [o.id, o]));
   S.carts = new Map(d.carts.map((c) => [c.sid, c]));
   if (!S.seen.size) d.orders.forEach((o) => S.seen.add(o.id));
@@ -106,7 +105,7 @@ function shell() {
   <header class="ad-top">
     <div class="ad-brand"><img src="/photos/joyfull-logo.webp" alt="" width="38" height="38" /><div><b>Online orders</b><small>Pay at pickup</small></div></div>
     <nav class="ad-tabs" id="adTabs">
-      <button data-view="live">Live board</button><button data-view="history">All orders</button><button data-view="menu">Sold out</button><button data-view="settings">Settings</button>
+      <button data-view="live">Live board</button><button data-view="history">Order history</button><button data-view="menu">Sold out</button><button data-view="settings">Settings</button>
     </nav>
     <div class="ad-top__r">
       <button class="ad-pause" id="adPause" type="button"></button>
@@ -146,14 +145,14 @@ const today = () => [...S.orders.values()].filter((o) => dayKey(o.createdAt) ===
 function renderStats() {
   const t = today().filter((o) => o.status !== 'cancelled');
   const active = t.filter((o) => ['received', 'preparing', 'ready'].includes(o.status)).length;
-  const unpaid = [...S.orders.values()].filter((o) => o.status !== 'cancelled' && o.payment.status !== 'paid');
-  const collected = t.filter((o) => o.payment.status === 'paid').reduce((a, o) => a + o.total, 0);
+  const ready = t.filter((o) => o.status === 'ready').length;
+  const done = t.filter((o) => o.status === 'completed').length;
   $('#adStats').innerHTML = `
     <div><span>Orders today</span><b>${t.length}</b></div>
     <div><span>In progress</span><b>${active}</b></div>
     <div><span>Ordered today</span><b>${money(t.reduce((a, o) => a + o.total, 0))}</b></div>
-    <div><span>Collected today</span><b>${money(collected)}</b></div>
-    <div class="${unpaid.length ? 'is-warn' : ''}"><span>Unpaid (pay at pickup)</span><b>${unpaid.length} · ${money(unpaid.reduce((a, o) => a + o.total, 0))}</b></div>`;
+    <div><span>Ready for pickup</span><b>${ready}</b></div>
+    <div><span>Picked up today</span><b>${done}</b></div>`;
 }
 
 /* ── live board ───────────────────────────────────────────────────────── */
@@ -175,12 +174,7 @@ function renderBoard() {
 }
 const sortKey = (o) => new Date(o.pickup.type === 'scheduled' ? o.estReadyAt : o.createdAt).getTime();
 
-function payBadge(o) {
-  if (o.status === 'cancelled') return '<span class="ad-pay is-void">Cancelled</span>';
-  return o.payment.status === 'paid'
-    ? `<span class="ad-pay is-paid">PAID · ${esc(o.payment.collectedLabel)}</span>`
-    : '<span class="ad-pay is-unpaid">UNPAID · PAY AT PICKUP</span>';
-}
+function payBadge(o) { return o.status === 'cancelled' ? '<span class="ad-pay is-void">Cancelled</span>' : ''; }
 function card(o) {
   const fresh = !S.seen.has(o.id);
   const late = ['received', 'preparing'].includes(o.status) && new Date(o.estReadyAt) < Date.now();
@@ -193,7 +187,6 @@ function card(o) {
     ${o.notes ? `<p class="ad-card__note">📝 ${esc(o.notes)}</p>` : ''}
     <footer>${payBadge(o)}<span class="ad-card__prog">${done}/${o.items.length}</span>
       ${next ? `<button class="ad-btn ad-btn--sm ${next[0] === 'ready' ? 'ad-btn--purple' : next[0] === 'completed' ? '' : 'ad-btn--red'}" data-status="${next[0]}" data-id="${o.id}">${next[1]}</button>` : ''}
-      ${o.payment.status !== 'paid' && o.status !== 'cancelled' ? `<button class="ad-btn ad-btn--sm ad-btn--lemon" data-pay="${o.id}">Mark paid</button>` : ''}
     </footer>
   </article>`;
 }
@@ -231,70 +224,32 @@ function renderModal() {
         <div class="ad-acts">${statusBtns.map(([s, label, tone]) => `<button class="ad-btn ad-btn--${tone}" data-status="${s}" data-id="${o.id}">${label}</button>`).join('')}</div>
         ${['received', 'preparing'].includes(o.status) ? `<div class="ad-eta"><span>Ready time</span><button class="ad-btn ad-btn--ghost ad-btn--sm" data-eta="-5" data-id="${o.id}">−5 min</button><b>${clock(o.estReadyAt)}</b><button class="ad-btn ad-btn--ghost ad-btn--sm" data-eta="5" data-id="${o.id}">+5 min</button><button class="ad-btn ad-btn--ghost ad-btn--sm" data-eta="10" data-id="${o.id}">+10</button></div>` : ''}
 
-        <h3>Payment <small>separate from preparation</small></h3>
-        <div class="ad-paybox ${o.payment.status === 'paid' ? 'is-paid' : ''}">
-          ${o.payment.status === 'paid'
-            ? `<b>PAID · ${money(o.payment.amount ?? o.total)}</b><span>${esc(o.payment.collectedLabel)} · ${clock(o.payment.paidAt)} · by ${esc(o.payment.paidBy)}</span>${o.payment.note ? `<span>“${esc(o.payment.note)}”</span>` : ''}${S.me.role === 'owner' ? `<button class="ad-link" data-unpay="${o.id}">Undo payment (owner)</button>` : ''}`
-            : o.status === 'cancelled' ? '<b>No payment — order cancelled</b>'
-            : `<b>UNPAID · PAY AT PICKUP</b><span>Collect ${money(o.total)} at the counter. Nothing was charged online.</span><button class="ad-btn ad-btn--lemon ad-btn--lg" data-pay="${o.id}">MARK AS PAID</button>`}
-        </div>
+        <p class="ad-small">Customer pays ${money(o.total)} at the counter when they pick up.</p>
 
         <h3>Timeline</h3>
-        <ol class="ad-hist">${[...o.history.map((h) => ({ at: h.at, t: `${h.status === 'ready' ? 'Ready for pickup' : h.status[0].toUpperCase() + h.status.slice(1)}`, by: h.by })), ...(o.payment.history ?? []).map((h) => ({ at: h.at, t: h.action === 'paid' ? `Paid · ${S.payMethods[h.method] ?? h.method}` : `Payment reversed${h.reason ? ` (${h.reason})` : ''}`, by: h.by, pay: 1 }))].sort((a, b) => a.at.localeCompare(b.at)).map((h) => `<li class="${h.pay ? 'is-pay' : ''}"><time>${clock(h.at)}</time><span>${esc(h.t)}</span><small>${esc(h.by || '')}</small></li>`).join('')}</ol>
+        <ol class="ad-hist">${[...o.history.map((h) => ({ at: h.at, t: `${h.status === 'ready' ? 'Ready for pickup' : h.status[0].toUpperCase() + h.status.slice(1)}`, by: h.by })), ].sort((a, b) => a.at.localeCompare(b.at)).map((h) => `<li class="${h.pay ? 'is-pay' : ''}"><time>${clock(h.at)}</time><span>${esc(h.t)}</span><small>${esc(h.by || '')}</small></li>`).join('')}</ol>
         <p class="ad-small"><a href="${o.trackUrl}" target="_blank" rel="noopener">Open the customer's JOYTRACK view ↗</a></p>
       </section>
     </div>
   </div>`;
 }
 
-function payDialog(id) {
-  const o = S.orders.get(id); if (!o) return;
-  const methods = (S.settings.paymentMethods || []).filter((m) => S.payMethods[m]);
-  const m = $('#adModal'); m.hidden = false;
-  m.innerHTML = `<div class="ad-modal__scrim" data-close></div>
-  <form class="ad-modal__panel ad-paydlg" id="payForm" role="dialog" aria-modal="true" aria-label="Record payment">
-    <button type="button" class="ad-x" data-close aria-label="Close">×</button>
-    <p class="ad-eyebrow">Order #${o.number} · ${esc(o.customer.name)}</p>
-    <h2>Record payment · ${money(o.total)}</h2>
-    <p>Only mark paid after the money is collected at the counter.</p>
-    <fieldset class="ad-methods">${methods.map((k, i) => `<label><input type="radio" name="method" value="${k}" ${i === 0 ? 'checked' : ''}/><span>${esc(S.payMethods[k])}</span></label>`).join('')}</fieldset>
-    <label class="ad-field">Note <small>optional — e.g. last 4 of card, change given</small><input name="note" maxlength="140" /></label>
-    <p class="ad-small">Recorded by <b>${esc(S.me.name)}</b> at ${clock(new Date())}.</p>
-    <p class="ad-err" hidden></p>
-    <div class="ad-acts"><button type="button" class="ad-btn ad-btn--ghost" data-back="${o.id}">Back</button><button class="ad-btn ad-btn--lemon ad-btn--lg" type="submit">Confirm — ${money(o.total)} PAID</button></div>
-  </form>`;
-  $('#payForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const fd = Object.fromEntries(new FormData(e.target));
-    try { const u = await api(`/api/admin/orders/${id}/pay`, fd); S.orders.set(u.id, u); S.open = id; flash(`#${u.number} marked PAID · ${u.payment.collectedLabel}`); render(); }
-    catch (err) { const el = $('.ad-err', e.target); el.hidden = false; el.textContent = err.message; }
-  };
-}
-
 async function onAction(e) {
   const t = e.target;
   if (t.closest('[data-close]')) { S.open = null; $('#adModal').hidden = true; return; }
   const back = t.closest('[data-back]'); if (back) { S.open = back.dataset.back; renderModal(); return; }
-  const pay = t.closest('[data-pay]'); if (pay) { e.stopPropagation(); return payDialog(pay.dataset.pay); }
   try {
     const st = t.closest('[data-status]');
     if (st) {
       e.stopPropagation();
       const o = S.orders.get(st.dataset.id), to = st.dataset.status;
       if (to === 'cancelled' && !confirm(`Cancel order #${o.number}? The customer will see it was cancelled.`)) return;
-      if (to === 'completed' && o.payment.status !== 'paid') {
-        const ok = await ask(`#${o.number} is still UNPAID`, `Completing only records that the order was handed over. It will stay UNPAID until someone records the payment.`, [['pay', `Record payment first`, 'lemon'], ['go', 'Complete anyway (stays unpaid)', 'ghost']]);
-        if (ok === 'pay') return payDialog(o.id);
-        if (ok !== 'go') return;
-      }
       const u = await api(`/api/admin/orders/${st.dataset.id}/status`, { status: to }); S.orders.set(u.id, u); render(); return;
     }
     const pr = t.closest('[data-prep]');
     if (pr) { const u = await api(`/api/admin/orders/${pr.dataset.id}/items/${pr.dataset.line}`, { prep: pr.dataset.prep }); S.orders.set(u.id, u); render(); return; }
     const eta = t.closest('[data-eta]');
     if (eta) { const u = await api(`/api/admin/orders/${eta.dataset.id}/eta`, { addMinutes: Number(eta.dataset.eta) }); S.orders.set(u.id, u); render(); return; }
-    const un = t.closest('[data-unpay]');
-    if (un) { const reason = prompt('Why are you undoing this payment?'); if (reason === null) return; const u = await api(`/api/admin/orders/${un.dataset.unpay}/unpay`, { reason }); S.orders.set(u.id, u); render(); return; }
     const op = t.closest('[data-open]');
     if (op && !t.closest('button, a')) { S.open = op.dataset.open; S.seen.add(S.open); saveSeen(); render(); }
   } catch (err) { flash(err.message, true); }
@@ -325,21 +280,103 @@ function renderCarts() {
 }
 
 /* ── history ──────────────────────────────────────────────────────────── */
+const STAGES = [
+  ['all', 'All orders'], ['received', 'Just entered'], ['preparing', 'In progress'], ['ready', 'Ready for pickup'], ['completed', 'Done (picked up)'], ['cancelled', 'Cancelled'],
+];
+const RANGES = [['today', 'Today'], ['yesterday', 'Yesterday'], ['7d', 'Last 7 days'], ['30d', 'Last 30 days'], ['month', 'This month'], ['all', 'All time'], ['custom', 'Pick dates']];
+const H = { stage: 'all', range: 'today', from: '', to: '', q: '' };
+function inRange(o) {
+  const k = dayKey(o.createdAt), today = dayKey(new Date());
+  const back = (n) => dayKey(new Date(Date.now() - n * 864e5));
+  switch (H.range) {
+    case 'today': return k === today;
+    case 'yesterday': return k === back(1);
+    case '7d': return k >= back(6);
+    case '30d': return k >= back(29);
+    case 'month': return k.slice(0, 7) === today.slice(0, 7);
+    case 'custom': return (!H.from || k >= H.from) && (!H.to || k <= H.to);
+    default: return true;
+  }
+}
+function historyList() {
+  let list = [...S.orders.values()].filter(inRange).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  if (H.q) {
+    const q = H.q.toLowerCase().trim(), digits = q.replace(/\D/g, '');
+    list = list.filter((o) => String(o.number).includes(q) || o.customer.name.toLowerCase().includes(q) || (digits.length >= 3 && o.customer.phone.includes(digits))
+      || o.items.some((l) => l.name.toLowerCase().includes(q)));
+  }
+  return list;
+}
+const stageLabel = (s) => ({ received: 'Just entered', preparing: 'In progress', ready: 'Ready', completed: 'Done', cancelled: 'Cancelled' })[s] || s;
+const dateFmt = (d) => new Date(d).toLocaleDateString('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+
 function renderHistory() {
-  const f = S.filter;
-  let list = [...S.orders.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  if (f === 'today') list = list.filter((o) => dayKey(o.createdAt) === dayKey(new Date()));
-  if (f === 'unpaid') list = list.filter((o) => o.status !== 'cancelled' && o.payment.status !== 'paid');
-  if (f === 'paid') list = list.filter((o) => o.payment.status === 'paid');
-  if (S.q) { const q = S.q.toLowerCase(); list = list.filter((o) => String(o.number).includes(q) || o.customer.name.toLowerCase().includes(q) || o.customer.phone.includes(q.replace(/\D/g, '') || '§')); }
-  $('#adMain').innerHTML = `<div class="ad-hbar">
-      <div class="ad-seg">${[['today', 'Today'], ['unpaid', 'Unpaid'], ['paid', 'Paid'], ['all', 'All']].map(([k, l]) => `<button data-filter="${k}" class="${f === k ? 'is-on' : ''}">${l}</button>`).join('')}</div>
-      <input class="ad-search" id="adQ" placeholder="Search # / name / phone" value="${esc(S.q || '')}" />
+  const base = historyList();
+  const counts = Object.fromEntries(STAGES.map(([k]) => [k, k === 'all' ? base.length : base.filter((o) => o.status === k).length]));
+  const list = H.stage === 'all' ? base : base.filter((o) => o.status === H.stage);
+  const valid = list.filter((o) => o.status !== 'cancelled');
+  const sum = (a) => a.reduce((t, o) => t + o.total, 0);
+  // group rows by day so the record reads like a ledger
+  const days = []; for (const o of list) { const k = dayKey(o.createdAt); if (!days.length || days.at(-1).k !== k) days.push({ k, at: o.createdAt, rows: [] }); days.at(-1).rows.push(o); }
+
+  $('#adMain').innerHTML = `<div class="ad-hist2">
+    <div class="ad-hbar">
+      <div class="ad-seg ad-seg--wrap" data-group="range">${RANGES.map(([k, l]) => `<button data-v="${k}" class="${H.range === k ? 'is-on' : ''}">${l}</button>`).join('')}</div>
+      ${H.range === 'custom' ? `<div class="ad-dates"><label>From <input type="date" id="hFrom" value="${H.from}"></label><label>To <input type="date" id="hTo" value="${H.to}"></label></div>` : ''}
     </div>
-    <table class="ad-table"><thead><tr><th>#</th><th>Placed</th><th>Customer</th><th>Items</th><th>Total</th><th>Preparation</th><th>Payment</th></tr></thead>
-    <tbody>${list.map((o) => `<tr data-open="${o.id}"><td><b>${o.number}</b></td><td>${new Date(o.createdAt).toLocaleDateString('en-US', { timeZone: TZ, month: 'short', day: 'numeric' })} ${clock(o.createdAt)}</td><td>${esc(o.customer.name)}<small>${phoneFmt(o.customer.phone)}</small></td><td>${o.items.reduce((a, l) => a + l.qty, 0)}</td><td>${money(o.total)}</td><td><span class="ad-status is-${o.status}">${o.status === 'ready' ? 'READY' : o.status.toUpperCase()}</span></td><td>${payBadge(o)}${o.payment.paidBy ? `<small>${esc(o.payment.paidBy)} · ${clock(o.payment.paidAt)}</small>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="ad-none">No orders.</td></tr>'}</tbody></table>`;
-  $('#adMain').querySelector('.ad-seg').onclick = (e) => { const b = e.target.closest('[data-filter]'); if (b) { S.filter = b.dataset.filter; renderHistory(); } };
-  const q = $('#adQ'); q.oninput = () => { S.q = q.value; const pos = q.selectionStart; renderHistory(); const n = $('#adQ'); n.focus(); n.setSelectionRange(pos, pos); };
+    <div class="ad-stagebar" data-group="stage">${STAGES.map(([k, l]) => `<button data-v="${k}" class="${H.stage === k ? 'is-on' : ''} is-${k}">${l}<b>${counts[k]}</b></button>`).join('')}</div>
+    <div class="ad-hbar">
+      <input class="ad-search" id="adQ" placeholder="Search order #, name, phone or item" value="${esc(H.q)}" />
+      <button class="ad-btn ad-btn--ghost ad-btn--sm" id="hCsv" type="button" ${list.length ? '' : 'disabled'}>Export CSV</button>
+      <button class="ad-btn ad-btn--ghost ad-btn--sm" id="hPrint" type="button" ${list.length ? '' : 'disabled'}>Print</button>
+    </div>
+    <div class="ad-hsum">
+      <div><span>Orders</span><b>${list.length}</b></div>
+      <div><span>Ordered (excl. cancelled)</span><b>${money(sum(valid))}</b></div>
+      <div><span>Picked up</span><b>${list.filter((o) => o.status === 'completed').length}</b></div>
+      <div><span>Avg order</span><b>${money(valid.length ? sum(valid) / valid.length : 0)}</b></div>
+    </div>
+    ${days.map((d) => `<section class="ad-day"><h3>${dateFmt(d.at)}<small>${d.rows.length} order${d.rows.length > 1 ? 's' : ''} · ${money(sum(d.rows.filter((o) => o.status !== 'cancelled')))}</small></h3>
+      <table class="ad-table"><thead><tr><th>#</th><th>Placed</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Finished</th></tr></thead>
+      <tbody>${d.rows.map((o) => {
+        const done = [...o.history].reverse().find((h) => h.status === 'completed' || h.status === 'cancelled');
+        return `<tr data-open="${o.id}">
+          <td><b>${o.number}</b></td>
+          <td>${clock(o.createdAt)}<small>${o.pickup.type === 'scheduled' ? `Pickup ${esc(o.pickup.label)}` : 'ASAP'}</small></td>
+          <td>${esc(o.customer.name)}<small>${phoneFmt(o.customer.phone)}</small></td>
+          <td class="ad-items-cell">${o.items.map((l) => `${l.qty > 1 ? `${l.qty}× ` : ''}${esc(l.name)}${l.size ? ` (${esc(l.size)})` : ''}`).join('<br>')}</td>
+          <td>${money(o.total)}</td>
+          <td><span class="ad-status is-${o.status}">${stageLabel(o.status).toUpperCase()}</span></td>
+          <td>${done ? `${clock(done.at)}<small>${esc(done.by || '')}</small>` : '<small>—</small>'}</td>
+        </tr>`;
+      }).join('')}</tbody></table></section>`).join('') || '<p class="ad-none">No orders match these filters.</p>'}
+  </div>`;
+
+  const m = $('#adMain');
+  m.querySelectorAll('[data-group]').forEach((g) => (g.onclick = (e) => {
+    const b = e.target.closest('[data-v]'); if (!b) return;
+    H[g.dataset.group] = b.dataset.v; renderHistory();
+  }));
+  $('#hFrom')?.addEventListener('change', (e) => { H.from = e.target.value; renderHistory(); });
+  $('#hTo')?.addEventListener('change', (e) => { H.to = e.target.value; renderHistory(); });
+  const q = $('#adQ'); q.oninput = () => { H.q = q.value; const pos = q.selectionStart; renderHistory(); const n = $('#adQ'); n.focus(); n.setSelectionRange(pos, pos); };
+  $('#hCsv').onclick = () => exportCsv(list);
+  $('#hPrint').onclick = () => print();
+}
+
+function exportCsv(list) {
+  const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = [['Order #', 'Date', 'Placed', 'Pickup', 'Customer', 'Phone', 'Items', 'Notes', 'Subtotal', 'Tax', 'Total', 'Status', 'Status by']];
+  for (const o of list) {
+    const last = o.history.at(-1);
+    rows.push([o.number, dayKey(o.createdAt), clock(o.createdAt), o.pickup.type === 'scheduled' ? o.pickup.label : 'ASAP', o.customer.name, phoneFmt(o.customer.phone),
+      o.items.map((l) => `${l.qty}x ${l.name}${l.size ? ` (${l.size})` : ''}${l.options.length ? ` [${l.options.map((x) => x.name).join(', ')}]` : ''}${l.note ? ` "${l.note}"` : ''}`).join('; '),
+      o.notes, o.subtotal.toFixed(2), o.tax.toFixed(2), o.total.toFixed(2), stageLabel(o.status), last?.by ?? '']);
+  }
+  const blob = new Blob(['﻿' + rows.map((r) => r.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `joyfull-orders-${H.range === 'custom' ? `${H.from || 'start'}_to_${H.to || 'today'}` : H.range}-${dayKey(new Date())}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
 /* ── sold out ─────────────────────────────────────────────────────────── */
@@ -364,19 +401,15 @@ async function togglePause() {
 }
 function renderSettings() {
   const owner = S.me.role === 'owner';
-  const enabled = new Set(S.settings.paymentMethods || []);
   $('#adMain').innerHTML = `<div class="ad-panel ad-settings">
     <section><h2>Online ordering</h2>
       <label class="ad-toggle"><input type="checkbox" id="setPause" ${S.settings.ordersPaused ? 'checked' : ''}/><span>Pause online ordering</span></label>
       <label class="ad-field">Message while paused<input id="setMsg" maxlength="160" value="${esc(S.settings.pauseMessage || '')}" /></label>
       <label class="ad-field">Default prep time (minutes)<input id="setPrep" type="number" min="5" max="90" value="${S.settings.prepMinutes}" ${owner ? '' : 'disabled'} /></label>
-      <p class="ad-small">Sales tax: ${(S.settings.taxRate * 100).toFixed(2)}% (set with TAX_RATE on the server). Payment is always taken in person at pickup — never online.</p>
-    </section>
-    <section><h2>In-person payment methods</h2><p class="ad-small">What staff can pick when they press MARK AS PAID.</p>
-      <div class="ad-methods">${Object.entries(S.payMethods).map(([k, l]) => `<label><input type="checkbox" data-pm="${k}" ${enabled.has(k) ? 'checked' : ''} ${owner ? '' : 'disabled'} /><span>${esc(l)}</span></label>`).join('')}</div>
+      <p class="ad-small">Sales tax: ${(S.settings.taxRate * 100).toFixed(2)}% (set with TAX_RATE on the server). Customers pay at the counter when they pick up.</p>
     </section>
     <section><h2>Staff</h2>
-      ${owner ? `<p class="ad-small">Each person signs in with their own PIN, so every status change and payment shows who did it.</p>
+      ${owner ? `<p class="ad-small">Each person signs in with their own PIN, so every status change shows who did it.</p>
       <ul class="ad-staff">${S.staff.map((s) => `<li><b>${esc(s.name)}</b><button class="ad-link" data-pin="${s.id}">Reset PIN</button><button class="ad-link" data-rm="${s.id}">Remove</button></li>`).join('') || '<li class="ad-none">No staff yet — add your team below.</li>'}</ul>
       <form class="ad-addstaff" id="addStaff"><input name="name" placeholder="Name" maxlength="40" required /><input name="pin" placeholder="4–8 digit PIN" inputmode="numeric" pattern="[0-9]{4,8}" required /><button class="ad-btn ad-btn--red">Add staff</button></form>` : '<p class="ad-small">Only the owner can manage staff.</p>'}
     </section>
@@ -387,7 +420,6 @@ function renderSettings() {
   $('#setPause').onchange = (e) => save({ ordersPaused: e.target.checked, pauseMessage: $('#setMsg').value });
   $('#setMsg').onchange = (e) => save({ pauseMessage: e.target.value });
   $('#setPrep').onchange = (e) => save({ prepMinutes: Number(e.target.value) });
-  m.onchange = (e) => { if (e.target.dataset.pm) save({ paymentMethods: $$('[data-pm]:checked', m).map((x) => x.dataset.pm) }); };
   m.onclick = async (e) => {
     const rm = e.target.closest('[data-rm]'), pin = e.target.closest('[data-pin]');
     try {

@@ -1,5 +1,4 @@
-// JOYTRACK — live order tracking. Pay at pickup; payment is never shown as paid here
-// until staff record it at the counter.
+// JOYTRACK — live order tracking. Customers pay at the counter when they pick up.
 import './track.css';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -118,12 +117,10 @@ function render(o) {
   });
   $('#steps').classList.toggle('is-cancelled', cancelled);
 
-  // payment — always pay at pickup; shows paid only after staff record it
-  const paid = o.payment.status === 'paid';
-  $('#pay').className = `jt-card jt-pay${paid ? ' is-paid' : ''}`;
-  $('#pay').innerHTML = paid
-    ? `<b>PAID AT PICKUP</b><span>Payment received at the counter. Thank you!</span><strong>${money(o.total)}</strong>`
-    : cancelled ? `<b>NOTHING TO PAY</b><span>This order was cancelled.</span><strong>${money(0)}</strong>`
+  // customers always pay at the counter when they pick up
+  $('#pay').className = 'jt-card jt-pay';
+  $('#pay').innerHTML = cancelled ? `<b>NOTHING TO PAY</b><span>This order was cancelled.</span><strong>${money(0)}</strong>`
+    : o.status === 'completed' ? `<b>PICKED UP</b><span>Thanks for ordering with Joy-Full Java + Juice!</span><strong>${money(o.total)}</strong>`
     : `<b>PAY AT PICKUP</b><span>Nothing was charged online. Pay at the counter with cash or card when you collect.</span><strong>${money(o.total)}<small>due at pickup</small></strong>`;
 
   const done = o.items.filter((l) => l.prep === 'done').length;

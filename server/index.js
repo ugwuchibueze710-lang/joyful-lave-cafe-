@@ -70,7 +70,7 @@ function publicView(o) {
     items: o.items.map((l) => ({ lineId: l.lineId, name: l.name, size: l.size, options: l.options.map((x) => x.name), qty: l.qty, lineTotal: l.lineTotal, note: l.note, prep: l.prep })),
     subtotal: o.subtotal, tax: o.tax, taxRate: o.taxRate, total: o.total,
     pickup: o.pickup, estReadyAt: o.estReadyAt, firstName: o.customer.name.split(/\s+/)[0],
-    payment: { status: o.payment.status, method: 'pay_at_pickup' },
+    payment: { method: 'pay_at_pickup' },
     cafe: { name: business.name, phone: business.phone, phoneHref: business.phoneHref, street: business.street, city: business.city, mapsUrl: business.mapsUrl },
   };
 }
@@ -163,7 +163,7 @@ app.post('/api/orders', async (req, res) => {
       items: priced.lines.map((l, i) => ({ ...l, lineId: `L${i + 1}`, prep: 'queued' })),
       subtotal: priced.subtotal, tax: priced.tax, taxRate: priced.taxRate, total: priced.total,
       pickup, estReadyAt,
-      payment: { status: 'unpaid', method: 'pay_at_pickup', collectedMethod: null, paidAt: null, paidBy: null, history: [] },
+      payment: { method: 'pay_at_pickup' },
       source: 'website',
     };
     await store.putOrder(order);
@@ -227,10 +227,9 @@ app.get('/api/admin/bootstrap', staffOnly(), (req, res) => {
   const s = store.settings();
   res.json({
     me: { id: req.staff.id, name: req.staff.name, role: req.staff.role },
-    orders: store.orders().slice(0, 600).map(adminView),
+    orders: store.orders().slice(0, 5000).map(adminView),
     carts: [...carts.values()],
     settings: { ...s, taxRate: TAX_RATE },
-    payMethods: PAY_METHODS,
     staff: req.staff.role === 'owner' ? store.staff().map(({ pin, ...x }) => x) : [],
     storage: store.kind, menu: Object.values(itemsById).map((i) => ({ id: i.id, name: i.name, category: i.category })),
     pickup: pickupWindow(new Date(), { prepMinutes: s.prepMinutes }),
@@ -278,26 +277,6 @@ app.post('/api/admin/orders/:id/eta', staffOnly(), async (req, res) => {
   o.estReadyAt = new Date((add < 0 ? new Date(o.estReadyAt).getTime() : base) + add * 60000).toISOString();
   await store.putOrder(o); broadcast(o); res.json(adminView(o));
 });
-app.post('/api/admin/orders/:id/pay', staffOnly(), async (req, res) => {
-  const o = loadOrder(req, res); if (!o) return;
-  if (o.payment.status === 'paid') return res.status(409).json({ error: `Already marked paid by ${o.payment.paidBy}.` });
-  const method = String(req.body?.method);
-  const enabled = store.settings().paymentMethods || [];
-  if (!PAY_METHODS[method] || !enabled.includes(method)) return res.status(400).json({ error: 'Choose how the customer paid.' });
-  const at = nowISO();
-  o.payment = { ...o.payment, status: 'paid', collectedMethod: method, collectedLabel: PAY_METHODS[method], paidAt: at, paidBy: req.staff.name, amount: o.total,
-    note: String(req.body?.note ?? '').trim().slice(0, 140), history: [...(o.payment.history ?? []), { action: 'paid', method, at, by: req.staff.name }] };
-  await store.putOrder(o); broadcast(o); res.json(adminView(o));
-});
-app.post('/api/admin/orders/:id/unpay', staffOnly('owner'), async (req, res) => {
-  const o = loadOrder(req, res); if (!o) return;
-  if (o.payment.status !== 'paid') return res.json(adminView(o));
-  const at = nowISO();
-  o.payment = { ...o.payment, status: 'unpaid', collectedMethod: null, collectedLabel: null, paidAt: null, paidBy: null, amount: null,
-    history: [...(o.payment.history ?? []), { action: 'reversed', at, by: req.staff.name, reason: String(req.body?.reason ?? '').slice(0, 140) }] };
-  await store.putOrder(o); broadcast(o); res.json(adminView(o));
-});
-
 app.post('/api/admin/settings', staffOnly(), async (req, res) => {
   const b = req.body ?? {}, patch = {};
   // anyone on shift can pause ordering and mark items sold out
@@ -306,8 +285,7 @@ app.post('/api/admin/settings', staffOnly(), async (req, res) => {
   if (Array.isArray(b.soldOut)) patch.soldOut = b.soldOut.filter((id) => itemsById[id]);
   if (req.staff.role === 'owner') {
     if (Number.isFinite(Number(b.prepMinutes))) patch.prepMinutes = Math.max(5, Math.min(90, Math.trunc(Number(b.prepMinutes))));
-    if (Array.isArray(b.paymentMethods)) { const pm = b.paymentMethods.filter((m) => PAY_METHODS[m]); if (pm.length) patch.paymentMethods = pm; }
-  } else if ('prepMinutes' in b || 'paymentMethods' in b) return res.status(403).json({ error: 'Only the owner can change that.' });
+  } else if ('prepMinutes' in b) return res.status(403).json({ error: 'Only the owner can change that.' });
   const s = await store.setSettings(patch);
   toAdmins('settings', { ...s, taxRate: TAX_RATE });
   res.json({ ...s, taxRate: TAX_RATE });
