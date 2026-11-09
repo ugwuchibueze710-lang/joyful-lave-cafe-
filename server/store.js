@@ -18,7 +18,7 @@ const DEFAULT_SETTINGS = {
 };
 
 export async function createStore() {
-  const db = { orders: new Map(), settings: { ...DEFAULT_SETTINGS }, staff: [] };
+  const db = { orders: new Map(), settings: { ...DEFAULT_SETTINGS }, staff: [], kv: new Map() };
   const url = process.env.DATABASE_URL;
   let backend;
 
@@ -40,11 +40,12 @@ export async function createStore() {
     const o = await pool.query('SELECT data FROM joyfull.orders ORDER BY created_at DESC LIMIT 5000');
     for (const r of o.rows) db.orders.set(r.data.id, r.data);
     const kv = await pool.query('SELECT key, value FROM joyfull.kv');
-    for (const r of kv.rows) { if (r.key === 'settings') db.settings = { ...DEFAULT_SETTINGS, ...r.value }; if (r.key === 'staff') db.staff = r.value; }
+    for (const r of kv.rows) { if (r.key === 'settings') db.settings = { ...DEFAULT_SETTINGS, ...r.value }; else if (r.key === 'staff') db.staff = r.value; else db.kv.set(r.key, r.value); }
     backend = {
       kind: 'postgres',
       saveOrder: (o) => pool.query('INSERT INTO joyfull.orders (id, number, data, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data', [o.id, o.number, o, o.createdAt]),
       saveKV: (k, v) => pool.query('INSERT INTO joyfull.kv (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', [k, JSON.stringify(v)]),
+      async ping() { const t = performance.now(); await pool.query('SELECT 1'); return Math.round(performance.now() - t); },
     };
   } else {
     const dir = process.env.DATA_DIR || path.resolve('data');
@@ -55,15 +56,16 @@ export async function createStore() {
       for (const o of j.orders ?? []) db.orders.set(o.id, o);
       db.settings = { ...DEFAULT_SETTINGS, ...(j.settings ?? {}) };
       db.staff = j.staff ?? [];
+      for (const [k, v] of Object.entries(j.kv ?? {})) db.kv.set(k, v);
     } catch { /* first run */ }
     let timer = null, writing = Promise.resolve();
     const flush = () => {
       timer = null;
-      const body = JSON.stringify({ orders: [...db.orders.values()], settings: db.settings, staff: db.staff });
+      const body = JSON.stringify({ orders: [...db.orders.values()], settings: db.settings, staff: db.staff, kv: Object.fromEntries(db.kv) });
       writing = writing.then(async () => { await fs.writeFile(file + '.tmp', body); await fs.rename(file + '.tmp', file); }).catch((e) => console.error('[store] write failed', e));
     };
     const schedule = () => { if (!timer) timer = setTimeout(flush, 150); return Promise.resolve(); };
-    backend = { kind: 'file', file, saveOrder: schedule, saveKV: schedule };
+    backend = { kind: 'file', file, saveOrder: schedule, saveKV: schedule, ping: async () => 0 };
   }
 
   return {
@@ -76,6 +78,9 @@ export async function createStore() {
     async setSettings(patch) { db.settings = { ...db.settings, ...patch }; await backend.saveKV('settings', db.settings); return db.settings; },
     staff: () => db.staff,
     async setStaff(list) { db.staff = list; await backend.saveKV('staff', db.staff); return db.staff; },
+    kv: (k, d = null) => (db.kv.has(k) ? db.kv.get(k) : d),
+    async setKV(k, v) { db.kv.set(k, v); await backend.saveKV(k, v); return v; },
+    ping: () => backend.ping(),
     async takeNumber() { const n = db.settings.nextNumber || 1001; db.settings.nextNumber = n + 1; await backend.saveKV('settings', db.settings); return n; },
   };
 }

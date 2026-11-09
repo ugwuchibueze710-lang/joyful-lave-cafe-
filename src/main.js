@@ -1,3 +1,4 @@
+import './telemetry.js';
 import './styles.css';
 import { gsap } from 'gsap';
 import Lenis from 'lenis';

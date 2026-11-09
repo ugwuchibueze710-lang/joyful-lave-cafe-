@@ -34,7 +34,19 @@ export async function loadConfig() {
     if (r.ok) config = await r.json();
   } catch { /* offline: keep local schedule */ }
   markSoldOut();
+  renderBanner();
   return config;
+}
+
+/* ── site-wide announcement banner (set by the owner or the agency) ───── */
+function renderBanner() {
+  const a = config.announcement;
+  let bar = document.getElementById('siteBanner');
+  if (!a?.text) { bar?.remove(); document.documentElement.classList.remove('has-banner'); return; }
+  if (!bar) { bar = document.createElement('div'); bar.id = 'siteBanner'; bar.setAttribute('role', 'status'); document.body.prepend(bar); }
+  bar.className = `site-banner site-banner--${a.tone || 'info'}`;
+  bar.textContent = a.text;
+  document.documentElement.classList.add('has-banner');
 }
 
 /* ── live cart sync (staff see the order forming) ─────────────────────── */

@@ -8,6 +8,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createStore } from './store.js';
+import { createMonitor } from './monitor.js';
+import { mountAgency } from './agency.js';
 import { issue, clear, readSession, ownerPasswordOk, ownerConfigured, hashPin, checkPin, limited } from './auth.js';
 import { priceCart, DEFAULT_TAX_RATE } from '../src/data/pricing.js';
 import { pickupWindow, cafeClock } from '../src/data/schedule.js';
@@ -19,22 +21,26 @@ const PORT = Number(process.env.PORT || 3001);
 const PROD = process.env.NODE_ENV === 'production';
 const TAX_RATE = Number.isFinite(Number(process.env.TAX_RATE)) && process.env.TAX_RATE !== '' ? Number(process.env.TAX_RATE) : DEFAULT_TAX_RATE;
 
-export const PAY_METHODS = {
-  cash: 'Cash',
-  card_at_counter: 'Card at counter',
-  mobile_wallet: 'Apple Pay / Google Pay at counter',
-  gift_card: 'Gift card',
-  check: 'Check',
-};
 const STATUSES = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
 const PREP = ['queued', 'making', 'done'];
 const NEXT = { received: ['preparing', 'ready', 'cancelled'], preparing: ['received', 'ready', 'cancelled'], ready: ['preparing', 'completed', 'cancelled'], completed: ['ready'], cancelled: ['received'] };
 
 const store = await createStore();
+let agency = null;
+const monitor = createMonitor({ store, onEvent: (event, data) => agency?.emit(event, data) });
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
+app.use(monitor.middleware);
+app.post('/api/telemetry', express.text({ type: '*/*', limit: '16kb' }), (req, res) => {
+  // browser errors and real page-load timings reported by visitors (src/telemetry.js)
+  if (limited('tele:' + req.ip, 60, 60000)) return res.status(204).end();
+  let b; try { b = typeof req.body === 'string' ? JSON.parse(req.body) : req.body; } catch { return res.status(204).end(); }
+  if (b?.kind === 'perf') monitor.perfReport(b); else if (b?.kind === 'error') monitor.clientReport(b, req);
+  res.status(204).end();
+});
 app.use(express.json({ limit: '64kb' }));
+app.use((req, res, next) => (agency ? agency.siteGate(req, res, next) : next()));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -112,7 +118,8 @@ app.delete('/api/carts/:sid', (req, res) => { if (carts.delete(String(req.params
 /* ── public config ──────────────────────────────────────────────────────── */
 function config() {
   const s = store.settings();
-  return { taxRate: TAX_RATE, ordersPaused: !!s.ordersPaused, pauseMessage: s.pauseMessage || '', soldOut: s.soldOut || [], pickup: pickupWindow(new Date(), { prepMinutes: s.prepMinutes }), payAtPickup: true, prepMinutes: s.prepMinutes || 15 };
+  return { taxRate: TAX_RATE, ordersPaused: !!s.ordersPaused, pauseMessage: s.pauseMessage || '', soldOut: s.soldOut || [], pickup: pickupWindow(new Date(), { prepMinutes: s.prepMinutes }), payAtPickup: true, prepMinutes: s.prepMinutes || 15,
+    announcement: s.announcement?.active ? { text: s.announcement.text, tone: s.announcement.tone || 'info' } : null };
 }
 app.get('/api/config', (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json(config()); });
 
@@ -169,6 +176,7 @@ app.post('/api/orders', async (req, res) => {
     await store.putOrder(order);
     if (b.cartSid && carts.delete(String(b.cartSid))) toAdmins('cart:remove', { sid: String(b.cartSid) });
     toAdmins('order:new', adminView(order));
+    agency?.emit('order.new', { number: order.number, total: order.total, items: order.items.reduce((a, l) => a + l.qty, 0), pickup: order.pickup.label, at: order.createdAt });
     res.status(201).json({ number: order.number, code: code(order), trackUrl: `/track/${code(order)}`, order: publicView(order) });
   } catch (e) {
     console.error('[order]', e);
@@ -212,12 +220,12 @@ app.post('/api/staff/login', (req, res) => {
   if (b.mode === 'owner') {
     if (!ownerPasswordOk(String(b.password ?? ''))) return res.status(401).json({ error: 'Wrong owner password.' });
     const name = String(b.name || business.owner).trim().slice(0, 40) || 'Owner';
-    issue(res, { id: 'owner', name, role: 'owner' }, secure);
+    issue(res, { id: 'owner', name, role: 'owner', epoch: store.settings().sessionEpoch || 0 }, secure);
     return res.json({ id: 'owner', name, role: 'owner' });
   }
   const st = store.staff().find((x) => x.id === b.staffId && x.active !== false);
   if (!st || !checkPin(String(b.pin ?? ''), st.pin)) return res.status(401).json({ error: 'Wrong PIN.' });
-  issue(res, { id: st.id, name: st.name, role: 'staff' }, secure);
+  issue(res, { id: st.id, name: st.name, role: 'staff', epoch: store.settings().sessionEpoch || 0 }, secure);
   res.json({ id: st.id, name: st.name, role: 'staff' });
 });
 app.post('/api/staff/logout', (req, res) => { clear(res); res.json({ ok: true }); });
@@ -246,18 +254,21 @@ function loadOrder(req, res) {
   if (!o) { res.status(404).json({ error: 'Order not found.' }); return null; }
   return o;
 }
-app.post('/api/admin/orders/:id/status', staffOnly(), async (req, res) => {
-  const o = loadOrder(req, res); if (!o) return;
-  const to = String(req.body?.status);
-  if (!STATUSES.includes(to)) return res.status(400).json({ error: 'Unknown status.' });
-  if (to === o.status) return res.json(adminView(o));
-  if (!NEXT[o.status]?.includes(to)) return res.status(409).json({ error: `Can't move an order from ${o.status} to ${to}.` });
+async function changeStatus(o, to, by) {
+  if (!STATUSES.includes(to)) return { error: 'Unknown status.', code: 400 };
+  if (to === o.status) return { ok: true };
+  if (!NEXT[o.status]?.includes(to)) return { error: `Can't move an order from ${o.status} to ${to}.`, code: 409 };
   o.status = to;
-  o.history.push({ status: to, at: nowISO(), by: req.staff.name });
+  o.history.push({ status: to, at: nowISO(), by });
   if (to === 'ready') o.items.forEach((l) => { l.prep = 'done'; });
   if (to === 'preparing') o.items.forEach((l) => { if (l.prep === 'queued') l.prep = 'making'; });
-  // COMPLETED = handed over. It never touches payment.
-  await store.putOrder(o); broadcast(o); res.json(adminView(o));
+  await store.putOrder(o); broadcast(o);
+  return { ok: true };
+}
+app.post('/api/admin/orders/:id/status', staffOnly(), async (req, res) => {
+  const o = loadOrder(req, res); if (!o) return;
+  const r = await changeStatus(o, String(req.body?.status), req.staff.name);
+  r.error ? res.status(r.code).json({ error: r.error }) : res.json(adminView(o));
 });
 app.post('/api/admin/orders/:id/items/:lineId', staffOnly(), async (req, res) => {
   const o = loadOrder(req, res); if (!o) return;
@@ -285,7 +296,8 @@ app.post('/api/admin/settings', staffOnly(), async (req, res) => {
   if (Array.isArray(b.soldOut)) patch.soldOut = b.soldOut.filter((id) => itemsById[id]);
   if (req.staff.role === 'owner') {
     if (Number.isFinite(Number(b.prepMinutes))) patch.prepMinutes = Math.max(5, Math.min(90, Math.trunc(Number(b.prepMinutes))));
-  } else if ('prepMinutes' in b) return res.status(403).json({ error: 'Only the owner can change that.' });
+    if (b.announcement && typeof b.announcement === 'object') patch.announcement = { text: String(b.announcement.text ?? '').slice(0, 200), active: !!b.announcement.active && !!String(b.announcement.text ?? '').trim(), tone: ['info', 'alert', 'promo'].includes(b.announcement.tone) ? b.announcement.tone : 'info' };
+  } else if ('prepMinutes' in b || 'announcement' in b) return res.status(403).json({ error: 'Only the owner can change that.' });
   const s = await store.setSettings(patch);
   toAdmins('settings', { ...s, taxRate: TAX_RATE });
   res.json({ ...s, taxRate: TAX_RATE });
@@ -308,7 +320,13 @@ app.post('/api/admin/staff', staffOnly('owner'), async (req, res) => {
   res.json(list.map(({ pin, ...x }) => x));
 });
 
-app.get('/healthz', (req, res) => res.json({ ok: true, storage: store.kind }));
+app.get('/healthz', (req, res) => res.json({ ok: monitor.db().ok, storage: store.kind }));
+
+/* ── agency API (BDT monitoring + control) ──────────────────────────────── */
+agency = mountAgency(app, {
+  store, monitor, toAdmins, adminView, config, itemsById, changeStatus, STATUSES, TAX_RATE, business, pickupWindow, staffOnly, limited,
+  live: { adminClients, trackClients, carts, agencyClients: new Set() },
+});
 
 /* ── website ────────────────────────────────────────────────────────────── */
 if (fs.existsSync(DIST)) {
@@ -320,6 +338,7 @@ if (fs.existsSync(DIST)) {
   app.get('/', page('index.html'));
   app.use((req, res) => (req.path.startsWith('/api/') ? res.status(404).json({ error: 'Not found' }) : res.status(404).sendFile(path.join(DIST, 'index.html'))));
 }
+app.use(monitor.errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Joy-Full Java + Juice order server on :${PORT} · storage: ${store.kind} · tax ${(TAX_RATE * 100).toFixed(2)}%`);

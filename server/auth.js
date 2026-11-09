@@ -39,6 +39,7 @@ export function readSession(req, store) {
   try {
     const s = JSON.parse(Buffer.from(body, 'base64url').toString());
     if (s.exp < Date.now() / 1000) return null;
+    if ((s.epoch || 0) !== (store.settings().sessionEpoch || 0)) return null; // "sign everyone out" was used
     if (s.role === 'staff') { // removed or renamed staff lose access immediately
       const st = store.staff().find((x) => x.id === s.id && x.active !== false);
       if (!st) return null;

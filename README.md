@@ -51,3 +51,17 @@ Or `npm run dev:server` + `npm run dev` for hot reload.
 ### Deploy (Render Web Service + Supabase)
 Environment variables: `DATABASE_URL` (Supabase → Connect → **Session pooler** string), `OWNER_PASSWORD`, `SESSION_SECRET`, `NODE_ENV=production`, `TAX_RATE=0.06`.
 Tables are created automatically in a private `joyfull` schema with row-level security on.
+
+## Agency API (BDT monitoring + control)
+
+Owner dashboard → click your name (top right) → **Connections** (or Ctrl/Cmd + Shift + K). Owner only.
+
+- **API keys** — generate a key for BDT (full control or read-only). Shown once; stored hashed. Revoke anytime.
+- **Website switch** — turn the whole public site off/on (customers see a "We'll be right back" page; dashboard + API keep working).
+- **Errors** — server errors, crashes, database outages and visitors' browser errors, live.
+- **Alerts to BDT** — signed webhooks (`X-Joyfull-Signature: sha256=HMAC(secret, body)`) for errors, site on/off, database, new orders.
+- **Activity** — audit log of every control action taken with a key.
+
+Base URL `https://<site>/api/agency/v1`, header `Authorization: Bearer jjj_live_…`.
+Endpoints: `/ping`, `/status`, `/health`, `/alerts`, `/errors`, `/metrics`, `/orders`, `/orders/:number`, `/menu`, `/settings`, `/audit`, `/events` (SSE),
+and controls `POST /site`, `/ordering`, `/announcement`, `/menu/:itemId`, `/orders/:number/status`, `/errors/resolve`, `/sessions/revoke`.

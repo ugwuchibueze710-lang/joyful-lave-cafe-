@@ -181,3 +181,9 @@ body:not(.is-loading) .ofab { transform: none; }
   .osheet__panel, .obag__panel, .ofab, .otoast { transition: none; }
   .osheet__photo img, .oline, .otrack-chip i { animation: none; }
 }
+
+/* announcement banner */
+.site-banner { position: fixed; top: 0; left: 0; right: 0; min-height: 40px; display: grid; place-items: center; z-index: 60; padding: 10px 16px; text-align: center; font: 600 14px/1.35 var(--body); color: #fff; background: var(--ink); }
+.site-banner--alert { background: var(--lemon); color: var(--ink); }
+.site-banner--promo { background: var(--purple); }
+html.has-banner .nav { top: 40px; }

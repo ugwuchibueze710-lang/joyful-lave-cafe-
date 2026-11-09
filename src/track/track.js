@@ -1,4 +1,5 @@
 // JOYTRACK — live order tracking. Customers pay at the counter when they pick up.
+import '../telemetry.js';
 import './track.css';
 
 const $ = (s, r = document) => r.querySelector(s);

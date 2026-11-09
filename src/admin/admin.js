@@ -1,5 +1,7 @@
 // Owner dashboard — live online orders (customers pay at the counter when they pick up),
 // live carts, order history, sold-out switches and settings.
+import '../telemetry.js';
+import { mountConnections } from './connections.js';
 import './admin.css';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -84,6 +86,7 @@ function connect() {
   es.addEventListener('order', (e) => { const o = JSON.parse(e.data); S.orders.set(o.id, o); render(); });
   es.addEventListener('cart', (e) => { const c = JSON.parse(e.data); S.carts.set(c.sid, c); renderCarts(); });
   es.addEventListener('cart:remove', (e) => { S.carts.delete(JSON.parse(e.data).sid); renderCarts(); });
+  es.addEventListener('signout', () => { es.close(); showLogin('You were signed out remotely. Please sign in again.'); });
   es.addEventListener('settings', (e) => { S.settings = JSON.parse(e.data); renderTop(); if (S.view === 'settings') renderSettings(); });
   es.onerror = () => { setLive(false); es.close(); setTimeout(async () => { try { await api('/api/staff/me').then((m) => { if (!m) throw 0; }); connect(); boot(); } catch { showLogin('Signed out. Please sign in again.'); } }, 3000); };
 }
@@ -100,6 +103,7 @@ function ding() {
 }
 
 /* ── layout ───────────────────────────────────────────────────────────── */
+let conn = null;
 function shell() {
   root.innerHTML = `
   <header class="ad-top">
@@ -110,7 +114,9 @@ function shell() {
     <div class="ad-top__r">
       <button class="ad-pause" id="adPause" type="button"></button>
       <span class="ad-live" id="adLive"><i></i><b>Connecting…</b></span>
-      <span class="ad-me">${esc(S.me.name)}<small>${S.me.role}</small></span>
+      ${S.me.role === 'owner'
+        ? `<span class="ad-mewrap"><button class="ad-me ad-me--btn" id="adMe" type="button" aria-haspopup="menu">${esc(S.me.name)}<small>${S.me.role}</small></button><span class="ad-menu" id="adMenu" hidden role="menu"><button type="button" role="menuitem" data-conn>Connections</button></span></span>`
+        : `<span class="ad-me">${esc(S.me.name)}<small>${S.me.role}</small></span>`}
       <button class="ad-btn ad-btn--ghost ad-btn--sm" id="adOut" type="button">Sign out</button>
     </div>
   </header>
@@ -122,6 +128,13 @@ function shell() {
   $('#adTabs').onclick = (e) => { const b = e.target.closest('[data-view]'); if (!b) return; S.view = b.dataset.view; render(); };
   $('#adOut').onclick = async () => { await fetch('/api/staff/logout', { method: 'POST' }); showLogin(); };
   $('#adPause').onclick = togglePause;
+  if (S.me.role === 'owner') {
+    conn ??= mountConnections({ api, flash });
+    const menu = $('#adMenu');
+    $('#adMe').onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; };
+    menu.querySelector('[data-conn]').onclick = () => { menu.hidden = true; conn.open(); };
+    document.addEventListener('click', () => { menu.hidden = true; });
+  }
   const snd = $('#adSound'); snd.hidden = false;
   snd.onclick = () => { ac ??= new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); snd.hidden = true; try { Notification.requestPermission?.(); } catch {} };
   root.addEventListener('click', onAction);
