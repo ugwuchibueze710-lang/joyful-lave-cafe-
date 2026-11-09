@@ -28,3 +28,16 @@ addEventListener('load', () => setTimeout(() => {
   const n = performance.getEntriesByType('navigation')[0];
   if (n) beacon({ kind: 'perf', loadMs: n.loadEventEnd || n.duration, ttfbMs: n.responseStart, lcpMs: lcp });
 }, 3000), { once: true });
+
+// visitors for BDT Admin → Visitors: one "view" per page, a "ping" each minute while it's visible
+if (!/^\/(admin|api)/.test(location.pathname)) {
+  let sid = '';
+  try { sid = sessionStorage.getItem('jjj-sid') || ''; if (!sid) { sid = (crypto.randomUUID?.() || String(Math.random()).slice(2) + Date.now()).replace(/[^A-Za-z0-9]/g, '').slice(0, 24); sessionStorage.setItem('jjj-sid', sid); } } catch { sid = String(Math.random()).slice(2, 14); }
+  const visit = (type) => {
+    const data = JSON.stringify({ kind: 'visit', type, sessionId: sid, path: location.pathname, referrer: type === 'view' && document.referrer && !document.referrer.startsWith(location.origin) ? document.referrer : undefined, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+    try { if (navigator.sendBeacon?.('/api/telemetry', data)) return; } catch { /* fall through */ }
+    fetch('/api/telemetry', { method: 'POST', body: data, keepalive: true }).catch(() => {});
+  };
+  visit('view');
+  setInterval(() => { if (!document.hidden) visit('ping'); }, 60000);
+}

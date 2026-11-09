@@ -52,16 +52,14 @@ Or `npm run dev:server` + `npm run dev` for hot reload.
 Environment variables: `DATABASE_URL` (Supabase → Connect → **Session pooler** string), `OWNER_PASSWORD`, `SESSION_SECRET`, `NODE_ENV=production`, `TAX_RATE=0.06`.
 Tables are created automatically in a private `joyfull` schema with row-level security on.
 
-## Agency API (BDT monitoring + control)
+## BDT connection (BDT Site Protocol v1)
 
 Owner dashboard → click your name (top right) → **Connections** (or Ctrl/Cmd + Shift + K). Owner only.
 
-- **API keys** — generate a key for BDT (full control or read-only). Shown once; stored hashed. Revoke anytime.
-- **Website switch** — turn the whole public site off/on (customers see a "We'll be right back" page; dashboard + API keep working).
-- **Errors** — server errors, crashes, database outages and visitors' browser errors, live.
-- **Alerts to BDT** — signed webhooks (`X-Joyfull-Signature: sha256=HMAC(secret, body)`) for errors, site on/off, database, new orders.
-- **Activity** — audit log of every control action taken with a key.
+1. **Connect to BDT** → *Generate BDT connection key* → copy the `bdtc1_…` key.
+2. BDT Admin → Websites → Add a website → **Connect with API key** → paste.
 
-Base URL `https://<site>/api/agency/v1`, header `Authorization: Bearer jjj_live_…`.
-Endpoints: `/ping`, `/status`, `/health`, `/alerts`, `/errors`, `/metrics`, `/orders`, `/orders/:number`, `/menu`, `/settings`, `/audit`, `/events` (SSE),
-and controls `POST /site`, `/ordering`, `/announcement`, `/menu/:itemId`, `/orders/:number/status`, `/errors/resolve`, `/sessions/revoke`.
+BDT then reads `/api/it/bdt/summary`, `/info`, `/issues`, `/control`, `/preview` and sends `/commands`
+(power, maintenance/back-soon, announcement, product price / sold out / hide, ordering pause, prep time, clear-issue).
+The site pushes errors, visitors and messages (with photos, audio, video) to BDT, signed with the secret from the handshake.
+The window also has the website power switch, back-soon mode, issues, messages, visitors and an activity log.

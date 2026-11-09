@@ -4,6 +4,7 @@
 import { itemsById } from '../data/menu.js';
 import { priceLine, priceCart, defaultChoices, lineSummary, money, DEFAULT_TAX_RATE } from '../data/pricing.js';
 import { pickupWindow } from '../data/schedule.js';
+import { applyOverrides } from '../data/overrides.js';
 import './order.css';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -31,7 +32,11 @@ const pricedBag = () => (bag.length ? priceCart(bag, { taxRate: config.taxRate }
 export async function loadConfig() {
   try {
     const r = await fetch('/api/config', { cache: 'no-store' });
-    if (r.ok) config = await r.json();
+    if (r.ok) {
+      const prev = JSON.stringify(config.overrides || null);
+      config = await r.json();
+      if (JSON.stringify(config.overrides || null) !== prev) { applyOverrides(config.overrides); dispatchEvent(new CustomEvent('jjj:menu-changed')); }
+    }
   } catch { /* offline: keep local schedule */ }
   markSoldOut();
   renderBanner();

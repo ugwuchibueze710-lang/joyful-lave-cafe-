@@ -9,11 +9,11 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createStore } from './store.js';
 import { createMonitor } from './monitor.js';
-import { mountAgency } from './agency.js';
+import { mountBdt } from './bdt.js';
 import { issue, clear, readSession, ownerPasswordOk, ownerConfigured, hashPin, checkPin, limited } from './auth.js';
 import { priceCart, DEFAULT_TAX_RATE } from '../src/data/pricing.js';
 import { pickupWindow, cafeClock } from '../src/data/schedule.js';
-import { business, itemsById } from '../src/data/menu.js';
+import { business, itemsById, categories } from '../src/data/menu.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.resolve(__dirname, '../dist');
@@ -26,21 +26,21 @@ const PREP = ['queued', 'making', 'done'];
 const NEXT = { received: ['preparing', 'ready', 'cancelled'], preparing: ['received', 'ready', 'cancelled'], ready: ['preparing', 'completed', 'cancelled'], completed: ['ready'], cancelled: ['received'] };
 
 const store = await createStore();
-let agency = null;
-const monitor = createMonitor({ store, onEvent: (event, data) => agency?.emit(event, data) });
+let bdt = null;
+const monitor = createMonitor({ store, onEvent: (event, data) => { if (event === 'error') bdt?.onError(data); } });
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(monitor.middleware);
 app.post('/api/telemetry', express.text({ type: '*/*', limit: '16kb' }), (req, res) => {
   // browser errors and real page-load timings reported by visitors (src/telemetry.js)
-  if (limited('tele:' + req.ip, 60, 60000)) return res.status(204).end();
+  if (limited('tele:' + req.ip, 120, 60000)) return res.status(204).end();
   let b; try { b = typeof req.body === 'string' ? JSON.parse(req.body) : req.body; } catch { return res.status(204).end(); }
-  if (b?.kind === 'perf') monitor.perfReport(b); else if (b?.kind === 'error') monitor.clientReport(b, req);
+  if (b?.kind === 'perf') monitor.perfReport(b); else if (b?.kind === 'error') monitor.clientReport(b, req); else if (b?.kind === 'visit') bdt?.onVisit(b, req);
   res.status(204).end();
 });
 app.use(express.json({ limit: '64kb' }));
-app.use((req, res, next) => (agency ? agency.siteGate(req, res, next) : next()));
+app.use((req, res, next) => (bdt ? bdt.siteGate(req, res, next) : next()));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -119,7 +119,8 @@ app.delete('/api/carts/:sid', (req, res) => { if (carts.delete(String(req.params
 function config() {
   const s = store.settings();
   return { taxRate: TAX_RATE, ordersPaused: !!s.ordersPaused, pauseMessage: s.pauseMessage || '', soldOut: s.soldOut || [], pickup: pickupWindow(new Date(), { prepMinutes: s.prepMinutes }), payAtPickup: true, prepMinutes: s.prepMinutes || 15,
-    announcement: s.announcement?.active ? { text: s.announcement.text, tone: s.announcement.tone || 'info' } : null };
+    announcement: s.announcement?.active ? { text: s.announcement.text, link: s.announcement.link || null, tone: s.announcement.tone || 'info' } : null,
+    overrides: s.overrides || null };
 }
 app.get('/api/config', (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json(config()); });
 
@@ -138,7 +139,7 @@ app.post('/api/orders', async (req, res) => {
     if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(phone)) return res.status(400).json({ error: 'Please enter a valid 10-digit phone number.', field: 'phone' });
     if (limited('phone:' + phone, 6, 60 * 60000)) return res.status(429).json({ error: 'Too many orders for this phone number. Please call the cafe.' });
 
-    const priced = priceCart(b.lines, { taxRate: TAX_RATE, soldOut: s.soldOut || [] });
+    const priced = priceCart(b.lines, { taxRate: TAX_RATE, soldOut: [...(s.soldOut || []), ...(s.overrides?.hidden || [])] });
     if (!priced.ok) return res.status(400).json({ error: priced.error });
 
     const win = pickupWindow(new Date(), { prepMinutes: s.prepMinutes });
@@ -176,7 +177,6 @@ app.post('/api/orders', async (req, res) => {
     await store.putOrder(order);
     if (b.cartSid && carts.delete(String(b.cartSid))) toAdmins('cart:remove', { sid: String(b.cartSid) });
     toAdmins('order:new', adminView(order));
-    agency?.emit('order.new', { number: order.number, total: order.total, items: order.items.reduce((a, l) => a + l.qty, 0), pickup: order.pickup.label, at: order.createdAt });
     res.status(201).json({ number: order.number, code: code(order), trackUrl: `/track/${code(order)}`, order: publicView(order) });
   } catch (e) {
     console.error('[order]', e);
@@ -322,10 +322,10 @@ app.post('/api/admin/staff', staffOnly('owner'), async (req, res) => {
 
 app.get('/healthz', (req, res) => res.json({ ok: monitor.db().ok, storage: store.kind }));
 
-/* ── agency API (BDT monitoring + control) ──────────────────────────────── */
-agency = mountAgency(app, {
-  store, monitor, toAdmins, adminView, config, itemsById, changeStatus, STATUSES, TAX_RATE, business, pickupWindow, staffOnly, limited,
-  live: { adminClients, trackClients, carts, agencyClients: new Set() },
+/* ── BDT connection (BDT Site Protocol v1) ──────────────────────────────── */
+bdt = mountBdt(app, express, {
+  store, monitor, toAdmins, config, itemsById, categories, TAX_RATE, business, staffOnly, limited,
+  live: { adminClients, trackClients, carts },
 });
 
 /* ── website ────────────────────────────────────────────────────────────── */

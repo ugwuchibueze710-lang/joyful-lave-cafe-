@@ -30,7 +30,7 @@ export function renderMenu() {
     const cats = categories.filter((c) => current === 'all' || c.id === current);
     let html = '', count = 0;
     cats.forEach((c) => {
-      const items = c.items.filter((it) => !q || (it.name + ' ' + it.desc).toLowerCase().includes(q));
+      const items = c.items.filter((it) => !it.hidden).filter((it) => !q || (it.name + ' ' + it.desc).toLowerCase().includes(q));
       if (!items.length) return;
       count += items.length;
       html += `<section class="menu__cat" id="cat-${c.id}"><h3>${esc(c.name)}</h3><p>${esc(c.blurb)}</p><div class="menu__grid">${items.map(itemHTML).join('')}</div></section>`;
@@ -40,6 +40,7 @@ export function renderMenu() {
     panel.querySelectorAll('.item').forEach((el, i) => { el.style.setProperty('--d', `${Math.min(i, 12) * 40}ms`); el.classList.add('is-in'); });
     dispatchEvent(new CustomEvent('jjj:menu-drawn'));
   }
+  addEventListener('jjj:menu-changed', () => draw()); // live price / visibility changes from BDT
   // 3D tilt + light glare that follows the cursor
   if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
     panel.addEventListener('pointermove', (e) => {
